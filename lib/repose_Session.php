@@ -29,7 +29,8 @@ class repose_Session {
      * @return object Proxy
      */
     public function add($instance, $clazz = null) {
-        return $this->instanceCache->add($instance, $clazz);
+        $proxy = $this->instanceCache->add($this, $instance, $clazz);
+        return $proxy;
     }
 
     /**
@@ -37,7 +38,7 @@ class repose_Session {
      * @return array
      */
     public function added() {
-        return $this->instanceCache->added();
+        return $this->instanceCache->added($this);
     }
 
     /**
@@ -59,7 +60,7 @@ class repose_Session {
      * @return array
      */
     public function deleted() {
-        return $this->instanceCache->deleted();
+        return $this->instanceCache->deleted($this);
     }
 
     /**
@@ -67,7 +68,7 @@ class repose_Session {
      * @return array
      */
     public function dirty() {
-        return $this->instanceCache->dirty();
+        return $this->instanceCache->dirty($this);
     }
 
     /**
@@ -120,6 +121,15 @@ class repose_Session {
      * @param object $instance Object instance
      */
     public function refresh($instance) {
+    }
+
+    /**
+     * Get the properties for the specified class
+     * @param string $clazz Class name
+     * @return array
+     */
+    public function getProperties($clazz) {
+        return array('name');
     }
 
 }

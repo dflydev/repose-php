@@ -35,11 +35,12 @@ class repose_InstanceCache {
 
     /**
      * Add an instance to the cache.
+     * @param repose_Session $session Session
      * @param object $instance Object instance
      * @param string $clazz Class name
      * @return object Proxy
      */
-    public function add($instance, $clazz = null) {
+    public function add($session, $instance, $clazz = null) {
 
         // TODO We should check to make certain this instance is cached
         // otherwise this could potentially be an instance from another
@@ -54,13 +55,13 @@ class repose_InstanceCache {
             $this->wrappers[$clazz] = array();
         }
 
-        foreach ( $this->find($clazz) as $wrapper ) {
+        foreach ( $this->find($session, $clazz) as $wrapper ) {
             if ( $wrapper['instance'] === $instance ) {
                 return $wrapper['proxy'];
             }
         }
 
-        $proxy = $this->proxyGenerator->makeProxy($clazz, $instance);
+        $proxy = $this->proxyGenerator->makeProxy($session, $clazz, $instance);
 
         $this->wrappers[$clazz][] = array(
             'state' => 'added',
@@ -74,36 +75,40 @@ class repose_InstanceCache {
 
     /**
      * Set of all proxies marked as added.
+     * @param repose_Session $session Session
      * @return array
      */
-    public function added() {
-        return $this->find(null, 'added', 'proxy');
+    public function added($session) {
+        return $this->find($session, null, 'added', 'proxy');
     }
 
     /**
      * Set of all proxies marked as deleted.
+     * @param repose_Session $session Session
      * @return array
      */
-    public function deleted() {
-        return $this->find(null, 'deleted', 'proxy');
+    public function deleted($session) {
+        return $this->find($session, null, 'deleted', 'proxy');
     }
 
     /**
      * Set of all proxies considered dirty.
+     * @param repose_Session $session Session
      * @return array
      */
-    public function dirty() {
-        return $this->find(null, 'dirty', 'proxy');
+    public function dirty($session) {
+        return $this->find($session, null, 'dirty', 'proxy');
     }
 
     /**
      * Perform a search on wrappers.
+     * @param repose_Session $session Session
      * @param string $clazz Specific class name
      * @param string $state Specific state name
      * @param string $which Which attribute to return?
      * @return array
      */
-    protected function find($clazz = null, $state = null, $which = 'wrapper') {
+    protected function find($session, $clazz = null, $state = null, $which = 'wrapper') {
 
         $results = array();
 
@@ -115,11 +120,21 @@ class repose_InstanceCache {
         foreach ( $clazzes as $clazz ) {
             if ( isset($this->wrappers[$clazz]) ) {
                 foreach ( $this->wrappers[$clazz] as $wrapper ) {
-                    if ( $state === null or $wrapper['state'] == $state ) {
-                        $results[] = $which == 'wrapper' ?
-                            $wrapper :
-                            $wrapper[$which];
-
+                    $result = $which == 'wrapper' ?
+                        $wrapper : $wrapper[$which];
+                    if ( $state === null ) {
+                        $results[] = $result;
+                    } else {
+                        switch($state) {
+                            case 'added':
+                            case 'deleted':
+                                if ( $wrapper['state'] == $state ) {
+                                    $results[] = $result;
+                                }
+                                break;
+                            case '':
+                                break;
+                        }
                     }
                 }
             }
