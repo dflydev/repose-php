@@ -1,0 +1,10 @@
+Testing with PHPUnit (http://www.phpunit.de/)
+
+From the tests/ directory:
+
+    phpunit AllTests
+
+From any other directory:
+
+    phpunit AllTests /path/to/AllTests.php
+    phpunit AllTests tests/AllTests.php
