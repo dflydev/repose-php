@@ -84,18 +84,19 @@ class repose_ProxyGenerator {
         $c[] = '$this->___repose_clazz = $clazz;';
         $c[] = '$this->___repose_proxyClazz = $proxyClazz;';
         $c[] = 'foreach ( $this->___repose_getProperties($session) as $param ) {';
-        $c[] = '$this->___repose_cache[$param] = $this->$param;';
+        $c[] = '$this->___repose_cache[$param] = isset($this->$param) ? $this->$param : null;';
         $c[] = '}';
         $c[] = '}';
 
         $c[] = 'public function ___repose_getProperties($session, $clazz = null) {';
         $c[] = 'if ( $clazz === null ) $clazz = $this->___repose_clazz;';
-        $c[] = 'return $session->getProperties($clazz);';
+        $c[] = 'return $session->getPropertyNames($clazz);';
         $c[] = '}';
 
         $c[] = 'public function ___repose_getState($session) {';
         $c[] = 'foreach ( $this->___repose_cache as $k => $v ) {';
-        $c[] = 'if ( $v !== $this->$k ) return \'dirty\';';
+        $c[] = '$vTest = isset($this->$k) ? $this->$k : null;';
+        $c[] = 'if ( $v !== $vTest ) return \'dirty\';';
         $c[] = '}';
         $c[] = 'return \'added\';';
         $c[] = '}';

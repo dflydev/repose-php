@@ -5,6 +5,8 @@
  */
 
 require_once('repose_InstanceCache.php');
+require_once('repose_IEngine.php');
+require_once('repose_Mapping.php');
 
 /**
  * Session
@@ -18,7 +20,15 @@ class repose_Session {
      */
     protected $instanceCache;
 
-    public function __construct() {
+    /**
+     * Constructor
+     * @param repose_IEngine $engine Engine
+     * @param repose_Mapping $mapping Mapping
+     * @param array $options Options
+     */
+    public function __construct(repose_IEngine $engine, repose_Mapping $mapping) {
+        $this->engine = $engine;
+        $this->mapping = $mapping;
         $this->instanceCache = new repose_InstanceCache();
     }
 
@@ -129,7 +139,16 @@ class repose_Session {
      * @return array
      */
     public function getProperties($clazz) {
-        return array('name');
+        return $this->mapping->mappedClassProperties($clazz);
+    }
+
+    /**
+     * Get the properties for the specified class
+     * @param string $clazz Class name
+     * @return array
+     */
+    public function getPropertyNames($clazz) {
+        return $this->mapping->mappedClassPropertyNames($clazz);
     }
 
 }

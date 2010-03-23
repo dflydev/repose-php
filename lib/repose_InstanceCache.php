@@ -132,7 +132,10 @@ class repose_InstanceCache {
                                     $results[] = $result;
                                 }
                                 break;
-                            case '':
+                            case 'dirty':
+                                if ( $state == $wrapper['proxy']->___repose_getState($session) ) {
+                                    $results[] = $result;
+                                }
                                 break;
                         }
                     }
