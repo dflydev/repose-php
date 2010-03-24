@@ -39,8 +39,17 @@ class repose_Session {
      * @return object Proxy
      */
     public function add($instance, $clazz = null) {
-        $proxy = $this->instanceCache->add($this, $instance, $clazz);
-        return $proxy;
+        return $this->instanceCache->add($this, $instance, $clazz);
+    }
+
+    /**
+     * Place an object in the Session.
+     * @param string $clazz Class name
+     * @param array $data Data
+     * @return object Proxy
+     */
+    public function addFromData($clazz, $data) {
+        return $this->instanceCache->addFromData($this, $clazz, $data);
     }
 
     /**
@@ -97,6 +106,8 @@ class repose_Session {
      * Flush all object changes to the database.
      */
     public function flush() {
+        $this->instanceCache->flushPending($this);
+        $this->instanceCache->flushDirty($this);
     }
 
     /**
@@ -149,6 +160,40 @@ class repose_Session {
      */
     public function getPropertyNames($clazz) {
         return $this->mapping->mappedClassPropertyNames($clazz);
+    }
+
+    /**
+     * Get the primary key for the specified class
+     * @param string $clazz Class name
+     * @return repose_MappedClassPrimaryKey
+     */
+    public function getPrimaryKey($clazz) {
+        return $this->mapping->mappedClassPrimaryKey($clazz);
+    }
+
+    /**
+     * Get the mapping for a class
+     * @param string $clazz Class name
+     * @return repose_MappedClass
+     */
+    public function getMappedClass($clazz) {
+        return $this->mapping->mappedClass($clazz);
+    }
+
+    /**
+     * Engine
+     * @return repose_IEngine
+     */
+    public function engine() {
+        return $this->engine;
+    }
+
+    /**
+     * Mapping
+     * @return repose_Mapping
+     */
+    public function mapping() {
+        return $this->mapping;
     }
 
 }

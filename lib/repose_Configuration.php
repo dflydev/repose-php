@@ -51,16 +51,19 @@ class repose_Configuration {
      */
     public function __construct($config) {
 
+        print_r($config);
+
         $this->mapping = new repose_Mapping();
 
-        foreach ( $config['classes'] as $clazz => $config ) {
+        foreach ( $config['classes'] as $clazz => $clazzConfig ) {
             $this->mapping->mapClass(
                 $clazz,
-                $config['tableName'],
-                $config['properties']
+                $clazzConfig['tableName'],
+                $clazzConfig['properties']
             );
         }
 
+        print_r($config);
         if ( isset($config['connection']['dataSource']) ) {
 
             // Things are very easy if a data source was specified
@@ -73,6 +76,8 @@ class repose_Configuration {
             // TODO Get config information and store in $this->dataSourceConfig
 
         } elseif ( isset($config['connection']['dsn']) ) {
+
+            print " [ AAAAA ]\n";
 
             // 
             // If a DSN is specified, things are also easy, but we still
@@ -152,6 +157,8 @@ class repose_Configuration {
      */
     public function engine() {
 
+        print " [ REQUESTING ENGINE ]\n";
+
         if ( $this->engine === null ) {
 
             //
@@ -168,6 +175,8 @@ class repose_Configuration {
                 PDO::ATTR_ERRMODE,
                 PDO::ERRMODE_EXCEPTION
             );
+
+            print_r($this->dataSourceConfig);
 
             $this->engine = new repose_PdoEngine($dataSource);
 

@@ -79,6 +79,14 @@ class repose_Mapping {
         return $this->classes[$clazz]->mappedClassPropertyNames();
     }
 
+    /**
+     * Mapped class primary key
+     * @return repose_MappedClassPrimaryKey
+     */
+    public function mappedClassPrimaryKey($clazz) {
+        return $this->classes[$clazz]->primaryKey();
+    }
+
 }
 
 ?>

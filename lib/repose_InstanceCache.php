@@ -6,6 +6,7 @@
 
 require_once('repose_IProxy.php');
 require_once('repose_ProxyGenerator.php');
+require_once('repose_Uuid.php');
 
 /**
  * Instance Cache
@@ -64,8 +65,42 @@ class repose_InstanceCache {
         $proxy = $this->proxyGenerator->makeProxy($session, $clazz, $instance);
 
         $this->wrappers[$clazz][] = array(
+            'id' => repose_Uuid::v4(),
             'state' => 'pending',
             'instance' => $instance,
+            'proxy' => $proxy
+        );
+
+        return $proxy;
+
+    }
+
+    /**
+     * Add an instance to the cache.
+     * @param repose_Session $session Session
+     * @param string $clazz Class name
+     * @param array $data Data
+     * @return object Proxy
+     */
+    public function addFromData($session, $clazz, $data) {
+
+        if ( ! isset($this->wrappers[$clazz]) ) {
+            // Ensure the wrappers array for this class exists.
+            $this->wrappers[$clazz] = array();
+        }
+
+        $reflectionClass = $this->proxyGenerator->proxyReflectionClass($clazz);
+        $instance = $reflectionClass->newInstance();
+        $proxy = $this->proxyGenerator->makeProxy(
+            $session,
+            $clazz,
+            $instance,
+            $data
+        );
+
+        $this->wrappers[$clazz][] = array(
+            'state' => 'persisted',
+            'instance' => $proxy,
             'proxy' => $proxy
         );
 
@@ -107,6 +142,29 @@ class repose_InstanceCache {
      */
     public function dirty($session) {
         return $this->find($session, null, 'dirty', 'proxy');
+    }
+
+    /**
+     * Flush all pending instances
+     * @param repose_Session $session Session
+     */
+    public function flushPending($session) {
+        foreach ( $this->find($session, null, 'pending') as $wrapper ) {
+            print " [ a ]\n";
+            $proxy = $wrapper['proxy'];
+            $proxy->___repose_persist($session);
+        }
+    }
+
+    /**
+     * Flush all dirty instances
+     * @param repose_Session $session Session
+     */
+    public function flushDirty($session) {
+        foreach ( $this->find($session, null, 'dirty') as $wrapper ) {
+            $proxy = $wrapper['proxy'];
+            $proxy->___repose_flush($session);
+        }
     }
 
     /**
