@@ -44,11 +44,11 @@ class repose_Session {
     }
 
     /**
-     * Set of all persistent instances marked as added.
+     * Set of all persistent instances marked as pending.
      * @return array
      */
-    public function added() {
-        return $this->instanceCache->added($this);
+    public function pending() {
+        return $this->instanceCache->pending($this);
     }
 
     /**

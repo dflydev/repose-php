@@ -64,7 +64,7 @@ class repose_InstanceCache {
         $proxy = $this->proxyGenerator->makeProxy($session, $clazz, $instance);
 
         $this->wrappers[$clazz][] = array(
-            'state' => 'added',
+            'state' => 'pending',
             'instance' => $instance,
             'proxy' => $proxy
         );
@@ -74,12 +74,21 @@ class repose_InstanceCache {
     }
 
     /**
-     * Set of all proxies marked as added.
+     * Set of all proxies marked as persisted.
      * @param repose_Session $session Session
      * @return array
      */
-    public function added($session) {
-        return $this->find($session, null, 'added', 'proxy');
+    public function persisted($session) {
+        return $this->find($session, null, 'persisted', 'proxy');
+    }
+
+    /**
+     * Set of all proxies marked as pending.
+     * @param repose_Session $session Session
+     * @return array
+     */
+    public function pending($session) {
+        return $this->find($session, null, 'pending', 'proxy');
     }
 
     /**
@@ -126,14 +135,15 @@ class repose_InstanceCache {
                         $results[] = $result;
                     } else {
                         switch($state) {
-                            case 'added':
+                            case 'pending':
+                            case 'persistent':
                             case 'deleted':
                                 if ( $wrapper['state'] == $state ) {
                                     $results[] = $result;
                                 }
                                 break;
                             case 'dirty':
-                                if ( $state == $wrapper['proxy']->___repose_getState($session) ) {
+                                if ( $wrapper['proxy']->___repose_isDirty($session) ) {
                                     $results[] = $result;
                                 }
                                 break;

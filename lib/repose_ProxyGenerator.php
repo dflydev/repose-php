@@ -11,6 +11,12 @@
 class repose_ProxyGenerator {
 
     /**
+     * Proxy template
+     * @var string
+     */
+    static private $PROXY_TEMPLATE = null;
+
+    /**
      * Track which proxies have been loaded
      * @var array
      */
@@ -40,7 +46,7 @@ class repose_ProxyGenerator {
     private function assertProxyClassExists($clazz) {
         if ( ! array_key_exists($clazz, self::$PROXIES_LOADED) ) {
             $proxyClazz = $clazz . '__ReposeProxy__';
-            $proxyClazzCode = $this->buildProxyClassCode($proxyClazz, $clazz);
+            $proxyClazzCode = $this->buildProxyClassCode($clazz);
             eval($proxyClazzCode);
             self::$PROXIES_LOADED[$clazz] = array(
                 'reflectionClass' => new ReflectionClass($proxyClazz),
@@ -70,40 +76,24 @@ class repose_ProxyGenerator {
         return $meta['reflectionClass'];
     }
 
-    private function buildProxyClassCode($proxyClazz, $clazz) {
+    /**
+     * Build the code for the class's proxy instance
+     * @param string $clazz Class
+     * @return string
+     */
+    private function buildProxyClassCode($clazz) {
 
-        $c = array();
+        if ( self::$PROXY_TEMPLATE === null ) {
+            self::$PROXY_TEMPLATE = preg_replace(
+                '/(^<\?php|\?>$)/',
+                '',
+                file_get_contents(
+                    dirname(__FILE__) . '/repose_ProxyInstance.inc'
+                )
+            );
+        }
 
-        $c[] = 'class ' . $proxyClazz . ' extends ' . $clazz . ' implements repose_IProxy {';
-
-        $c[] = 'private $___repose_clazz;';
-        $c[] = 'private $___repose_proxyClazz;';
-        $c[] = 'private $___repose_cache;';
-
-        $c[] = 'public function ___repose_init($session, $proxyClazz, $clazz) {';
-        $c[] = '$this->___repose_clazz = $clazz;';
-        $c[] = '$this->___repose_proxyClazz = $proxyClazz;';
-        $c[] = 'foreach ( $this->___repose_getProperties($session) as $param ) {';
-        $c[] = '$this->___repose_cache[$param] = isset($this->$param) ? $this->$param : null;';
-        $c[] = '}';
-        $c[] = '}';
-
-        $c[] = 'public function ___repose_getProperties($session, $clazz = null) {';
-        $c[] = 'if ( $clazz === null ) $clazz = $this->___repose_clazz;';
-        $c[] = 'return $session->getPropertyNames($clazz);';
-        $c[] = '}';
-
-        $c[] = 'public function ___repose_getState($session) {';
-        $c[] = 'foreach ( $this->___repose_cache as $k => $v ) {';
-        $c[] = '$vTest = isset($this->$k) ? $this->$k : null;';
-        $c[] = 'if ( $v !== $vTest ) return \'dirty\';';
-        $c[] = '}';
-        $c[] = 'return \'added\';';
-        $c[] = '}';
-
-        $c[] = '}';
-
-        return implode("\n", $c);
+        return preg_replace('/PROXY_TEMPLATE/', $clazz, self::$PROXY_TEMPLATE);
 
     }
 
