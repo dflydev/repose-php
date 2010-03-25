@@ -30,30 +30,6 @@ class sample_User {
         $this->name = $name;
     }
 
-    /**
-     * User ID
-     * @return int
-     */
-    public function getUserId() {
-        return $this->userId;
-    }
-
-    /**
-     * Name
-     * @return string
-     */
-    public function getName() {
-        return $this->name;
-    }
-
-    /**
-     * Set name
-     * @param string $name Name
-     */
-    public function setName($name) {
-        $this->name = $name;
-    }
-
 }
 
 ?>

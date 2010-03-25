@@ -48,22 +48,22 @@ class ReposeBasicTest extends AbstractReposeTest {
             $userBeau // Owner
         );
 
-        $this->assertEquals('Something is broken', $bug->getTitle());
-        $this->assertEquals('Click http://example.com/ to test!', $bug->getBody());
+        $this->assertEquals('Something is broken', $bug->title);
+        $this->assertEquals('Click http://example.com/ to test!', $bug->body);
 
-        $this->assertEquals('josh', $bug->getReporter()->getName(), 'Reporter');
-        $this->assertEquals('beau', $bug->getOwner()->getName(), 'Owner');
+        $this->assertEquals('josh', $bug->reporter->name, 'Reporter');
+        $this->assertEquals('beau', $bug->owner->name, 'Owner');
 
-        $this->assertEquals('Sample Project', $bug->getProject()->getName(), 'Bug\'s Project\'s name does not match');
-        $this->assertEquals('beau', $bug->getProject()->getManager()->getName(), 'Manager');
+        $this->assertEquals('Sample Project', $bug->project->name, 'Bug\'s Project\'s name does not match');
+        $this->assertEquals('beau', $bug->project->manager->name, 'Manager');
 
-        $this->assertEquals('Sample Project', $project->getName());
-        $this->assertEquals('beau', $project->getManager()->getName(), 'Manager');
+        $this->assertEquals('Sample Project', $project->name);
+        $this->assertEquals('beau', $project->manager->name, 'Manager');
 
-        $this->assertEquals('beau', $userBeau->getName());
-        $this->assertEquals('josh', $userJosh->getName());
+        $this->assertEquals('beau', $userBeau->name);
+        $this->assertEquals('josh', $userJosh->name);
 
-        $this->assertTrue($bug->getProject()->getManager() === $bug->getOwner());
+        $this->assertTrue($bug->project->manager === $bug->owner);
 
     }
 

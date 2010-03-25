@@ -38,45 +38,6 @@ class sample_Project {
         $this->manager = $manager;
     }
 
-    /**
-     * Access to project ID
-     * @return int
-     */
-    public function getProjectId() {
-        return $this->projectId;
-    }
-
-    /**
-     * Project name
-     * @return string
-     */
-    public function getName() {
-        return $this->name;
-    }
-
-    /**
-     * Set project name
-     * @param string $name Name
-     */
-    public function setName($name) {
-        $this->name = $name;
-    }
-
-    /**
-     * Get project manager
-     * @return sample_User
-     */
-    public function getManager() {
-        return $this->manager;
-    }
-
-    /**
-     * Set project manager
-     * @param sample_User $manager Manager
-     */
-    public function setManager($manager) {
-        $this->manager = $manager;
-    }
 }
 
 ?>

@@ -38,38 +38,6 @@ class sample_ProjectInfo {
         $this->description = $description;
     }
 
-    /**
-     * Project Info ID
-     * @return int
-     */
-    public function getProjectInfoId() {
-        return $this->projectInfoId;
-    }
-
-    /**
-     * Project
-     * @return sample_Project
-     */
-    public function getProject() {
-        return $this->project;
-    }
-
-    /**
-     * Description
-     * @return string
-     */
-    public function getDescription() {
-        return $this->description;
-    }
-
-    /**
-     * Set description
-     * @param string $description Description
-     */
-    public function setDescription($description) {
-        $this->description = $description;
-    }
-
 }
 
 ?>
