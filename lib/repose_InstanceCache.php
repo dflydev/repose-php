@@ -97,13 +97,9 @@ class repose_InstanceCache {
         // that was created last time.
         foreach ( $this->wrappers[$clazz] as $id => $wrapper ) {
             if ( $wrapper['instance'] === $instance ) {
-                print " [ found ]\n";
                 return $wrapper['proxy'];
             }
         }
-
-        print_r($instance);
-        print " [ New for some reason... ]\n";
 
         $proxy = $this->proxyGenerator->makeProxy($session, $clazz, $instance);
 

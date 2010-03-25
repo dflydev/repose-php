@@ -112,7 +112,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             if ( isset($this->$name) ) {
                 $value = $this->$name;
                 if ( $property->isObject() and ! $value instanceof repose_IProxy ) {
-                    print " [ attempting to add $name ]\n";
                     $this->$name = $value = $session->add($value);
                 }
                 $this->___repose_history[$name] = $value;
@@ -131,7 +130,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             if ( isset($data[$name]) ) {
                 $value = $data[$name];
                 if ( $property->isObject() and ! $value instanceof repose_IProxy ) {
-                    print " [ attempting to add $name ]\n";
                     $value = $session->add($value);
                 }
                 $this->$name = $value;
@@ -180,7 +178,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_persist($session) {
         $this->___repose_flushRelationships($session);
         if ( $this->___repose_isPersisted() ) return;
-        print " [ persisting " . $this->___repose_clazz . " ]\n";
         $this->___repose_isPersisted = true;
         $newId = $session->engine()->persist($session, $this);
         $clazz = $this->___repose_clazz;
@@ -188,7 +185,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         if ( ! $primaryKey->isComposite() ) {
             $primaryKeyProperty = $primaryKey->property();
             $name = $primaryKeyProperty->name();
-            print " [ storying $clazz $name as $newId ]\n";
             $this->$name = $newId;
         }
         $oldPk = $this->___repose_serializedPrimaryKey($session, 'history');
@@ -209,7 +205,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_flush($session) {
         $this->___repose_flushRelationships($session);
         if ( ! $this->___repose_isDirty($session) ) return;
-        print " [ flushing " . $this->___repose_clazz . " ]\n";
         $session->engine()->update($session, $this);
         $oldPk = $this->___repose_serializedPrimaryKey($session, 'history');
         $newPk = $this->___repose_serializedPrimaryKey($session, 'current');

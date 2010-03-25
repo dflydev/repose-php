@@ -21,7 +21,6 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @param repose_IProxy $proxy Proxy
      */
     public function persist(repose_Session $session, repose_IProxy $proxy) {
-        print_r($proxy);
         $mappedClass = $proxy->___repose_mappedClass($session);
         $data = $this->normalizeColumnData(
             $session,
