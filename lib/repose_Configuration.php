@@ -14,6 +14,13 @@ require_once('repose_PdoEngine.php');
 class repose_Configuration {
 
     /**
+     * Data source
+     * @var PDO
+     */
+    private $dataSource;
+
+
+    /**
      * Engine
      * @var repose_IEngine
      */
@@ -51,8 +58,6 @@ class repose_Configuration {
      */
     public function __construct($config) {
 
-        print_r($config);
-
         $this->mapping = new repose_Mapping();
 
         foreach ( $config['classes'] as $clazz => $clazzConfig ) {
@@ -63,21 +68,16 @@ class repose_Configuration {
             );
         }
 
-        print_r($config);
         if ( isset($config['connection']['dataSource']) ) {
 
             // Things are very easy if a data source was specified
             // in the configuration.
 
-            $this->engine = new repose_PdoEngine(
-                $config['connection']['dataSource']
-            );
+            $this->dataSource = $config['connection']['dataSource'];
 
             // TODO Get config information and store in $this->dataSourceConfig
 
         } elseif ( isset($config['connection']['dsn']) ) {
-
-            print " [ AAAAA ]\n";
 
             // 
             // If a DSN is specified, things are also easy, but we still
@@ -152,38 +152,43 @@ class repose_Configuration {
     }
 
     /**
-     * Engine
-     * @return repose_IEngine
+     * Data source
+     * @return PDO
      */
-    public function engine() {
+    public function dataSource() {
 
-        print " [ REQUESTING ENGINE ]\n";
-
-        if ( $this->engine === null ) {
+        if ( $this->dataSource === null ) {
 
             //
             // Attempt to lazy load a PDO Engine.
             //
 
-            $dataSource = new PDO(
+            $this->dataSource = new PDO(
                 $this->dataSourceConfig['dsn'],
                 $this->dataSourceConfig['username'],
                 $this->dataSourceConfig['password']
             );
 
-            $dataSource->setAttribute(
+            $this->dataSource->setAttribute(
                 PDO::ATTR_ERRMODE,
                 PDO::ERRMODE_EXCEPTION
             );
 
-            print_r($this->dataSourceConfig);
-
-            $this->engine = new repose_PdoEngine($dataSource);
-
         }
 
-        return $this->engine;
+        return $this->dataSource;
 
+    }
+
+    /**
+     * Engine
+     * @return repose_IEngine
+     */
+    public function engine() {
+        if ( $this->engine === null ) {
+            $this->engine = new repose_PdoEngine($this->dataSource());
+        }
+        return $this->engine;
     }
 
     /**

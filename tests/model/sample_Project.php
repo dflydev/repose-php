@@ -14,19 +14,19 @@ class sample_Project {
      * Project ID
      * @var int
      */
-    protected $projectId;
+    public $projectId;
 
     /**
      * Project name
      * @var string
      */
-    protected $name;
+    public $name;
 
     /**
      * Manager (User)
      * @var sample_User
      */
-    protected $manager;
+    public $manager;
 
     /**
      * Constructor

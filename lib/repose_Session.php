@@ -103,7 +103,7 @@ class repose_Session {
     }
 
     /**
-     * Flush all object changes to the database.
+     * Flush object changes to the database.
      */
     public function flush() {
         $this->instanceCache->flushPending($this);
@@ -181,6 +181,61 @@ class repose_Session {
     }
 
     /**
+     * Serialize primary key data
+     * @param repose_IProxy $proxy Proxy object
+     * @param string $pendingId ID to use if no primary key data is available
+     * @return string
+     */
+    public function serializePrimaryKey($primaryKeyData, $pendingId = null) {
+        if ( empty($primaryKeyData) and $pendingId !== null ) {
+            $primaryKeyData['___repose_id'] = $pendingId;
+        }
+        ksort($primaryKeyData);
+        return json_encode(array_map(
+            array($this, 'serializePrimaryKeyCb'),
+            $primaryKeyData
+        ));
+    }
+
+    /**
+     * Ensure that all of our primary key values are cast as strings
+     * @param mixed $v Value
+     * @return string
+     */
+    protected function serializePrimaryKeyCb($v) {
+        return (string)$v;
+    }
+
+    /**
+     * Load an added instance
+     * @param string $clazz Class
+     * @param mixed $key Primary key
+     */
+    public function load($clazz, $key) {
+        $primaryKey = $this->getPrimaryKey($clazz);
+        if ( $primaryKey->isComposite() ) {
+            if ( ! is_array($key) ) {
+                throw new Exception('Must specify an array to load composite class ' . $clazz);
+            }
+            return $this->instanceCache->load(
+                $clazz,
+                $this->serializePrimaryKey($key)
+            );
+        } else {
+            $primaryKeyData = array();
+            if ( is_array($key) ) {
+                $primaryKeyData = $key;
+            } else {
+                $primaryKeyData[$primaryKey->property()->name()] = $key;
+            }
+            return $this->instanceCache->load(
+                $clazz,
+                $this->serializePrimaryKey($primaryKeyData)
+            );
+        }
+    }
+
+    /**
      * Engine
      * @return repose_IEngine
      */
@@ -194,6 +249,14 @@ class repose_Session {
      */
     public function mapping() {
         return $this->mapping;
+    }
+
+    /**
+     * Instance cache
+     * @return repose_InstanceCache
+     */
+    public function instanceCache() {
+        return $this->instanceCache;
     }
 
 }

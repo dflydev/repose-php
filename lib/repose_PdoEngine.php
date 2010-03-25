@@ -42,9 +42,10 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
         }
         $sql = 'INSERT INTO ' . $tableName . ' (' . implode(',', $columns) . ') VALUES (' . implode(',', $placeholders) . ')';
         print " [ $sql ]\n";
+        print_r($values);
         $statement = $this->dataSource->prepare($sql);
         $statement->execute($values);
-        print_r($values);
+        return $this->dataSource->lastInsertId();
     }
 
     /**

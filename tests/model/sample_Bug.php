@@ -14,37 +14,37 @@ class sample_Bug {
      * Bug ID
      * @var int
      */
-    protected $bugId;
+    public $bugId;
 
     /**
      * Title
      * @var string
      */
-    protected $title;
+    public $title;
 
     /**
      * Body
      * @var string
      */
-    protected $body;
+    public $body;
 
     /**
      * Project
      * @var sample_Project
      */
-    protected $project;
+    public $project;
 
     /**
      * Reporter
      * @var sample_User
      */
-    protected $reporter;
+    public $reporter;
 
     /**
      * Owner
      * @var sample_User
      */
-    protected $owner;
+    public $owner;
 
     /**
      * Constructor

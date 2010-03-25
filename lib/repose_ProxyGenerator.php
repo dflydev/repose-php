@@ -28,21 +28,36 @@ class repose_ProxyGenerator {
      * @param string $clazz Class name
      * @param object $instance Object instance
      */
-    public function makeProxy($session, $clazz, $instance, $data = null) {
+    public function makeProxy($session, $clazz, $instance, $data = null, $isPersisted = false) {
         $proxy = null;
         $proxyClazz = null;
         if ( $instance instanceof repose_IProxy ) {
             $proxy = $instance;
             $proxyClazz = get_class($proxy);
         } else {
-            $this->assertProxyClassExists($clazz);
+            $meta = $this->assertProxyClassExists($clazz);
             $proxyClazz = $this->proxyClassName($clazz);
+            $proxy = $this->proxyReflectionClass($clazz)->newInstance();
+            $reflectionProperties = $this->reflectionClassProperties($clazz);
+            $proxyReflectionProperties = $this->proxyReflectionClassProperties($clazz);
+
+            foreach ( $reflectionProperties as $name => $reflectionProperty ) {
+                $originalValue = $reflectionProperty->getValue($instance);
+                $proxyReflectionproperty = $this->reflectionClassProperty(
+                    $clazz,
+                    $name
+                );
+                $proxyReflectionproperty->setValue($proxy, $originalValue);
+            }
+
+            /*
             $serializedParts = explode(':', serialize($instance));
             $serializedParts[1] = strlen($proxyClazz);
             $serializedParts[2] = '"' . $proxyClazz . '"';
             $proxy = unserialize(implode(':', $serializedParts));
+            */
         }
-        $proxy->___repose_init($session, $proxyClazz, $clazz, $data);
+        $proxy->___repose_init($session, $proxyClazz, $clazz, $data, $isPersisted);
         return $proxy;
     }
 
@@ -67,6 +82,28 @@ class repose_ProxyGenerator {
     }
 
     /**
+     * Get the reflection class property for the class
+     * @param string $clazz Class name
+     * @param string $name Name
+     * @return ReflectionClass
+     */
+    public function reflectionClassProperty($clazz, $name) {
+        $meta = $this->assertProxyClassExists($clazz);
+        return isset($meta['reflectionClassProperties'][$name]) ?
+            $meta['reflectionClassProperties'][$name] : null;
+    }
+
+    /**
+     * Get the reflection class properties for the class
+     * @param string $clazz Class name
+     * @return ReflectionClass
+     */
+    public function reflectionClassProperties($clazz) {
+        $meta = $this->assertProxyClassExists($clazz);
+        return $meta['reflectionClassProperties'];
+    }
+
+    /**
      * Get the reflection class for the proxy for this class
      * @param string $clazz Class name
      * @return ReflectionClass
@@ -74,6 +111,28 @@ class repose_ProxyGenerator {
     public function proxyReflectionClass($clazz) {
         $meta = $this->assertProxyClassExists($clazz);
         return $meta['proxyReflectionClass'];
+    }
+
+    /**
+     * Get the reflection class property for the proxy for this class
+     * @param string $clazz Class name
+     * @param string $name Name of property
+     * @return ReflectionClass
+     */
+    public function proxyReflectionClassProperty($clazz, $name) {
+        $meta = $this->assertProxyClassExists($clazz);
+        return isset($meta['proxyReflectionClassProperties'][$name]) ?
+            $meta['proxyReflectionClassProperties'][$name] : null;
+    }
+
+    /**
+     * Get the reflection class properties for the proxy for this class
+     * @param string $clazz Class name
+     * @return ReflectionClass
+     */
+    public function proxyReflectionClassProperties($clazz) {
+        $meta = $this->assertProxyClassExists($clazz);
+        return $meta['proxyReflectionClassProperties'];
     }
 
     /**
@@ -85,9 +144,21 @@ class repose_ProxyGenerator {
             $proxyClazz = $clazz . '__ReposeProxy__';
             $proxyClazzCode = $this->buildProxyClassCode($clazz);
             eval($proxyClazzCode);
+            $reflectionClass = new ReflectionClass($clazz);
+            $proxyReflectionClass = new ReflectionClass($proxyClazz);
+            $reflectionClassProperties = array();
+            $proxyReflectionClassProperties = array();
+            foreach ( $reflectionClass->getProperties() as $property ) {
+                $reflectionClassProperties[$property->getName()] = $property;
+            }
+            foreach ( $proxyReflectionClass->getProperties() as $property ) {
+                $proxyReflectionClassProperties[$property->getName()] = $property;
+            }
             self::$PROXIES_LOADED[$clazz] = array(
-                'reflectionClass' => new ReflectionClass($clazz),
-                'proxyReflectionClass' => new ReflectionClass($proxyClazz),
+                'reflectionClass' => $reflectionClass,
+                'reflectionClassProperties' => $reflectionClassProperties,
+                'proxyReflectionClass' => $proxyReflectionClass,
+                'proxyReflectionClassProperties' => $proxyReflectionClassProperties,
                 'proxyClazz' => $proxyClazz,
             );
         }

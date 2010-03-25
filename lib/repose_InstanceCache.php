@@ -15,6 +15,18 @@ require_once('repose_Uuid.php');
 class repose_InstanceCache {
 
     /**
+     * Cache of instance proxies
+     * @var array
+     */
+    protected $proxies;
+
+    /**
+     * Identity map
+     * @var array
+     */
+    protected $identityMap;
+
+    /**
      * Cache of instance wrappers.
      * @var array
      */
@@ -30,8 +42,26 @@ class repose_InstanceCache {
      * Constructor.
      */
     public function __construct() {
+        $this->proxies = array();
+        $this->identityMap = array();
         $this->wrappers = array();
         $this->proxyGenerator = new repose_ProxyGenerator();
+    }
+
+    /**
+     * Load an instance from the cache.
+     * @param string $clazz Class.
+     * @param string $primaryKey Primary key structure.
+     * @return object
+     */
+    public function load($clazz, $primaryKey) {
+
+        if ( isset($this->identityMap[$clazz][$primaryKey]) ) {
+            return $this->proxies[$this->identityMap[$clazz][$primaryKey]];
+        }
+
+        return null;
+
     }
 
     /**
@@ -56,20 +86,40 @@ class repose_InstanceCache {
             $this->wrappers[$clazz] = array();
         }
 
-        foreach ( $this->find($session, $clazz) as $wrapper ) {
+        if ( ! isset($this->identityMap[$clazz]) ) {
+            // Ensure the identity map array for this class exists.
+            $this->identityMap[$clazz] = array();
+        }
+
+        // This is the magic that makes it so that we can keep track
+        // of the original variables from the outside world. If they
+        // are already added to the system, we can dig out the proxy
+        // that was created last time.
+        foreach ( $this->wrappers[$clazz] as $id => $wrapper ) {
             if ( $wrapper['instance'] === $instance ) {
+                print " [ found ]\n";
                 return $wrapper['proxy'];
             }
         }
 
+        print_r($instance);
+        print " [ New for some reason... ]\n";
+
         $proxy = $this->proxyGenerator->makeProxy($session, $clazz, $instance);
 
-        $this->wrappers[$clazz][] = array(
-            'id' => repose_Uuid::v4(),
-            'state' => 'pending',
+        // Store a reference to the instance and to the proxy as a
+        // simple array wrapper. We will reference this later if
+        // the raw object is used again later.
+        $this->wrappers[$clazz][$proxy->___repose_id()] = array(
             'instance' => $instance,
             'proxy' => $proxy
         );
+
+        // Store the proxy by its internal ID.
+        $this->proxies[$proxy->___repose_id()] = $proxy;
+
+        // Store a map to this proxy by its internal ID.
+        $this->identityMap[$clazz][$proxy->___repose_serializedPrimaryKey($session)] = $proxy->___repose_id();
 
         return $proxy;
 
@@ -84,25 +134,27 @@ class repose_InstanceCache {
      */
     public function addFromData($session, $clazz, $data) {
 
-        if ( ! isset($this->wrappers[$clazz]) ) {
-            // Ensure the wrappers array for this class exists.
-            $this->wrappers[$clazz] = array();
+        if ( ! isset($this->identityMap[$clazz]) ) {
+            // Ensure the identity map array for this class exists.
+            $this->identityMap[$clazz] = array();
         }
 
         $reflectionClass = $this->proxyGenerator->proxyReflectionClass($clazz);
         $instance = $reflectionClass->newInstance();
+
         $proxy = $this->proxyGenerator->makeProxy(
             $session,
             $clazz,
             $instance,
-            $data
+            $data,
+            true
         );
 
-        $this->wrappers[$clazz][] = array(
-            'state' => 'persisted',
-            'instance' => $proxy,
-            'proxy' => $proxy
-        );
+        // Store the proxy by its internal ID.
+        $this->proxies[$proxy->___repose_id()] = $proxy;
+
+        // Store a map to this proxy by its internal ID.
+        $this->identityMap[$clazz][$proxy->___repose_serializedPrimaryKey($session)] = $proxy->___repose_id();
 
         return $proxy;
 
@@ -114,7 +166,11 @@ class repose_InstanceCache {
      * @return array
      */
     public function persisted($session) {
-        return $this->find($session, null, 'persisted', 'proxy');
+        $results = array();
+        foreach ( $this->proxies as $id => $proxy ) {
+            if ( $proxy->___repose_isPersisted() ) $results[] = $proxy;
+        }
+        return $results;
     }
 
     /**
@@ -123,7 +179,18 @@ class repose_InstanceCache {
      * @return array
      */
     public function pending($session) {
-        return $this->find($session, null, 'pending', 'proxy');
+        $results = array();
+        foreach ( $this->wrappers as $clazz => $wrappers ) {
+            foreach ( $wrappers as $id => $wrapper ) {
+                $proxy = $wrapper['proxy'];
+                if ( ! $proxy->___repose_isPersisted() ) {
+                    // We are really only pending if we are not
+                    // already persisted!
+                    $results[] = $wrapper['proxy'];
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -132,7 +199,7 @@ class repose_InstanceCache {
      * @return array
      */
     public function deleted($session) {
-        return $this->find($session, null, 'deleted', 'proxy');
+        // TODO Implement this
     }
 
     /**
@@ -141,77 +208,52 @@ class repose_InstanceCache {
      * @return array
      */
     public function dirty($session) {
-        return $this->find($session, null, 'dirty', 'proxy');
+        $results = array();
+        foreach ( $this->proxies as $id => $proxy ) {
+            if ( $proxy->___repose_isDirty($session) ) $results[] = $proxy;
+        }
+        return $results;
     }
 
     /**
-     * Flush all pending instances
+     * Flush instances that are marked pending
      * @param repose_Session $session Session
      */
     public function flushPending($session) {
-        foreach ( $this->find($session, null, 'pending') as $wrapper ) {
-            print " [ a ]\n";
-            $proxy = $wrapper['proxy'];
-            $proxy->___repose_persist($session);
+        foreach ( $this->pending($session) as $pending ) {
+            $pending->___repose_persist($session);
         }
     }
 
     /**
-     * Flush all dirty instances
+     * Flush instances that are marked dirty
      * @param repose_Session $session Session
      */
     public function flushDirty($session) {
-        foreach ( $this->find($session, null, 'dirty') as $wrapper ) {
-            $proxy = $wrapper['proxy'];
-            $proxy->___repose_flush($session);
+        foreach ( $this->dirty($session) as $dirty ) {
+            $dirty->___repose_flush($session);
         }
     }
 
     /**
-     * Perform a search on wrappers.
-     * @param repose_Session $session Session
-     * @param string $clazz Specific class name
-     * @param string $state Specific state name
-     * @param string $which Which attribute to return?
-     * @return array
+     * Update the identity map
+     * @param string $id Internal ID
+     * @param string $clazz Class name
+     * @param string $oldPk Old primary key
+     * @param string $newPk New primary key
      */
-    protected function find($session, $clazz = null, $state = null, $which = 'wrapper') {
+    public function updateIdentityMap($id, $clazz, $oldPk, $newPk) {
 
-        $results = array();
-
-        // If not clazz is specified, use all of the wrappers.
-        $clazzes = $clazz === null ?
-            array_keys($this->wrappers) :
-            array($clazz);
-
-        foreach ( $clazzes as $clazz ) {
-            if ( isset($this->wrappers[$clazz]) ) {
-                foreach ( $this->wrappers[$clazz] as $wrapper ) {
-                    $result = $which == 'wrapper' ?
-                        $wrapper : $wrapper[$which];
-                    if ( $state === null ) {
-                        $results[] = $result;
-                    } else {
-                        switch($state) {
-                            case 'pending':
-                            case 'persistent':
-                            case 'deleted':
-                                if ( $wrapper['state'] == $state ) {
-                                    $results[] = $result;
-                                }
-                                break;
-                            case 'dirty':
-                                if ( $wrapper['proxy']->___repose_isDirty($session) ) {
-                                    $results[] = $result;
-                                }
-                                break;
-                        }
-                    }
-                }
-            }
+        if ( ! isset($this->identityMap[$clazz]) ) {
+            // Ensure the identity map array for this class exists.
+            $this->identityMap[$clazz] = array();
         }
 
-        return $results;
+        // Store our ID at our new primary key.
+        $this->identityMap[$clazz][$newPk] = $id;
+
+        // Delete the reference to our new ID from our old primary key.
+        if ( $newPk != $oldPk ) unset($this->identityMap[$clazz][$oldPk]);
 
     }
 

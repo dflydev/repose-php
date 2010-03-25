@@ -14,13 +14,13 @@ class sample_User {
      * User ID
      * @var int
      */
-    protected $userId;
+    public $userId;
 
     /**
      * Name
      * @var string
      */
-    protected $name;
+    public $name;
 
     /**
      * Constructor

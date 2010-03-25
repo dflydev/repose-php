@@ -78,6 +78,7 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
             $property = $mappedClass->mappedClassProperty($name);
             $columnName = $property->columnName($session->mapping());
             if ( $property->isObject() ) {
+                $columnData[$columnName] = $value->___repose_primaryKeyValue($session);
             } else {
                 $columnData[$columnName] = $value;
             }
