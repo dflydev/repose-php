@@ -35,11 +35,26 @@ class repose_ProxyGenerator {
             $proxy = $instance;
             $proxyClazz = get_class($proxy);
         } else {
+
             $meta = $this->assertProxyClassExists($clazz);
+
             $proxyClazz = $this->proxyClassName($clazz);
-            $proxy = $this->proxyReflectionClass($clazz)->newInstance();
+
+            // TODO Someday this should be smarter. In the case of
+            // PHP >= 5.3, this is completely not needed. However,
+            // this step is critical to PHP < 5.3 otherwise any
+            // private or protected properties will be lost.
+            $serializedParts = explode(':', serialize($instance));
+            $serializedParts[1] = strlen($proxyClazz);
+            $serializedParts[2] = '"' . $proxyClazz . '"';
+            $proxy = unserialize(implode(':', $serializedParts));
+
+            //$proxy = $this->proxyReflectionClass($clazz)->newInstance();
+
             $reflectionProperties = $this->reflectionClassProperties($clazz);
-            $proxyReflectionProperties = $this->proxyReflectionClassProperties($clazz);
+            $proxyReflectionProperties = $this->proxyReflectionClassProperties(
+                $clazz
+            );
 
             foreach ( $reflectionProperties as $name => $reflectionProperty ) {
                 $originalValue = $reflectionProperty->getValue($instance);
@@ -50,12 +65,6 @@ class repose_ProxyGenerator {
                 $proxyReflectionproperty->setValue($proxy, $originalValue);
             }
 
-            /*
-            $serializedParts = explode(':', serialize($instance));
-            $serializedParts[1] = strlen($proxyClazz);
-            $serializedParts[2] = '"' . $proxyClazz . '"';
-            $proxy = unserialize(implode(':', $serializedParts));
-            */
         }
         $proxy->___repose_init($session, $proxyClazz, $clazz, $data, $isPersisted);
         return $proxy;

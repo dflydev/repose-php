@@ -43,6 +43,12 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     private $___repose_isPersisted;
 
     /**
+     * Are we flushing?
+     * @var bool
+     */
+    private $___repose_isFlushing = false;
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -172,50 +178,83 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     }
 
     /**
-     * Persist
-     * @param repose_Session $session Session
-     */
-    public function ___repose_persist($session) {
-        $this->___repose_flushRelationships($session);
-        if ( $this->___repose_isPersisted() ) return;
-        $this->___repose_isPersisted = true;
-        $newId = $session->engine()->persist($session, $this);
-        $clazz = $this->___repose_clazz;
-        $primaryKey = $session->getPrimaryKey($this->___repose_clazz);
-        if ( ! $primaryKey->isComposite() ) {
-            $primaryKeyProperty = $primaryKey->property();
-            $name = $primaryKeyProperty->name();
-            $this->$name = $newId;
-        }
-        $oldPk = $this->___repose_serializedPrimaryKey($session, 'history');
-        $newPk = $this->___repose_serializedPrimaryKey($session, 'current');
-        $this->___repose_populateHistoryFromInstance($session);
-        $session->instanceCache()->updateIdentityMap(
-            $this->___repose_id,
-            $this->___repose_clazz,
-            $oldPk,
-            $newPk
-        );
-    }
-
-    /**
      * Flush
      * @param repose_Session $session Session
      */
     public function ___repose_flush($session) {
+
+        // Avoid deep recursion.
+        if ( $this->___repose_isFlushing ) return;
+
+        // Set so if a related object tries to flush us again,
+        // we can skip that step.
+        $this->___repose_isFlushing = true;
+
+        // Try to recursively flush our relationships.
         $this->___repose_flushRelationships($session);
-        if ( ! $this->___repose_isDirty($session) ) return;
-        $session->engine()->update($session, $this);
-        $oldPk = $this->___repose_serializedPrimaryKey($session, 'history');
-        $newPk = $this->___repose_serializedPrimaryKey($session, 'current');
-        $this->___repose_populateHistoryFromInstance($session);
-        $this->___repose_isPersisted = true;
-        $session->instanceCache()->updateIdentityMap(
-            $this->___repose_id,
-            $this->___repose_clazz,
-            $oldPk,
-            $newPk
-        );
+
+        // Did we flush?
+        $didFlush = true;
+
+        if ( ! $this->___repose_isPersisted ) {
+
+            //
+            // If we have never been persisted, we should attempt
+            // to do so now. 
+            //
+
+            // Persist this proxy in our engine.
+            $newId = $session->engine()->persist($session, $this);
+
+            $clazz = $this->___repose_clazz;
+            $primaryKey = $session->getPrimaryKey($this->___repose_clazz);
+
+            if ( ! $primaryKey->isComposite() ) {
+                $primaryKeyProperty = $primaryKey->property();
+                $name = $primaryKeyProperty->name();
+                $this->$name = $newId;
+            }
+
+            // And now we know...
+            $this->___repose_isPersisted = true;
+
+        } elseif ( $this->___repose_isDirty($session) ) {
+
+            //
+            // If we have been persisted, we should update
+            // the proxy in the engine.
+            //
+
+            $session->engine()->update($session, $this);
+
+        } else {
+            // Nothing to flush!
+            $didFlush = false;
+        }
+
+        if ( $didFlush ) {
+
+            // Capture the primary keys from our history and current state.
+            $oldPk = $this->___repose_serializedPrimaryKey($session, 'history');
+            $newPk = $this->___repose_serializedPrimaryKey($session, 'current');
+
+            // Sync history from our current state.
+            $this->___repose_populateHistoryFromInstance($session);
+
+            // Move things around as needed inside of the identity map
+            // based on our old and new primary keys.
+            $session->instanceCache()->updateIdentityMap(
+                $this->___repose_id,
+                $this->___repose_clazz,
+                $oldPk,
+                $newPk
+            );
+
+        }
+
+        // We are no longer flushing.
+        $this->___repose_isFlushing = false;
+
     }
 
     /**

@@ -106,8 +106,7 @@ class repose_Session {
      * Flush object changes to the database.
      */
     public function flush() {
-        $this->instanceCache->flushPending($this);
-        $this->instanceCache->flushDirty($this);
+        $this->instanceCache->flush($this);
     }
 
     /**

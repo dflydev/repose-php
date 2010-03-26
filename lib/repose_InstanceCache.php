@@ -212,22 +212,14 @@ class repose_InstanceCache {
     }
 
     /**
-     * Flush instances that are marked pending
+     * Flush instances.
      * @param repose_Session $session Session
      */
-    public function flushPending($session) {
-        foreach ( $this->pending($session) as $pending ) {
-            $pending->___repose_persist($session);
-        }
-    }
-
-    /**
-     * Flush instances that are marked dirty
-     * @param repose_Session $session Session
-     */
-    public function flushDirty($session) {
-        foreach ( $this->dirty($session) as $dirty ) {
-            $dirty->___repose_flush($session);
+    public function flush($session) {
+        foreach ( $this->proxies as $id => $proxy ) {
+            if ( $proxy->___repose_isDirty($session) or ! $proxy->___repose_isPersisted() ) {
+                $proxy->___repose_flush($session);
+            }
         }
     }
 
