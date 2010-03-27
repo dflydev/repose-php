@@ -70,6 +70,23 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
     }
 
     /**
+     * Delete data from a table
+     * @param string $tableName Table name
+     * @param array $where Associative array containing WHERE information
+     */
+    protected function sqlDelete($tableName, $where) {
+        $wheres = array();
+        $values = array();
+        foreach ( $where as $columnName => $value ) {
+            $wheres[] = $columnName . ' = :where_' . $columnName;
+            $values['where_' . $columnName] = $value;
+        }
+        $sql = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $wheres);
+        $statement = $this->dataSource->prepare($sql);
+        $statement->execute($values);
+    }
+
+    /**
      * Select data
      * @param string $selectQuery Select query
      * @param array $params Associative array with bind params

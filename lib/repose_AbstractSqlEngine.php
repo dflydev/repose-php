@@ -62,6 +62,13 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @param repose_IProxy $proxy Proxy
      */
     public function delete(repose_Session $session, repose_IProxy $proxy) {
+        $mappedClass = $proxy->___repose_mappedClass($session);
+        $pkData = $this->normalizeColumnData(
+            $session,
+            $mappedClass,
+            $proxy->___repose_primaryKeyData($session)
+        );
+        return $this->sqlDelete($mappedClass->tableName(), $pkData);
     }
 
     /**
@@ -91,7 +98,11 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
             $property = $mappedClass->mappedClassProperty($name);
             $columnName = $property->columnName($session->mapping());
             if ( $property->isObject() ) {
-                $columnData[$columnName] = $value->___repose_primaryKeyValue($session);
+                if ( $value === null ) {
+                    $columnData[$columnName] = null;
+                } else {
+                    $columnData[$columnName] = $value->___repose_primaryKeyValue($session);
+                }
             } else {
                 $columnData[$columnName] = $value;
             }
@@ -113,6 +124,13 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @param array $where Associative array containing WHERE information
      */
     abstract protected function sqlUpdate($tableName, $data, $where);
+
+    /**
+     * Delete data from a table
+     * @param string $tableName Table name
+     * @param array $where Associative array containing WHERE information
+     */
+    abstract protected function sqlDelete($tableName, $where);
 
     /**
      * Select data

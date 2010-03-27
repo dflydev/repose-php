@@ -27,6 +27,12 @@ class repose_InstanceCache {
     protected $identityMap;
 
     /**
+     * Referrer map
+     * @var array
+     */
+    protected $referrerMap;
+
+    /**
      * Cache of instance wrappers.
      * @var array
      */
@@ -157,6 +163,27 @@ class repose_InstanceCache {
     }
 
     /**
+     * Delete an instance from the cache.
+     * @param repose_Session $session Session
+     * @param object $instance Object instance
+     * @return object Proxy
+     */
+    public function delete($session, $instance) {
+        if ( $instance instanceof repose_IProxy ) {
+            $instance->___repose_delete($session);
+            return;
+        }
+        foreach ( $this->wrappers as $clazz => $wrappers ) {
+            foreach ( $wrappers as $id => $wrapper ) {
+                if ( $wrapper['instance'] === $instance ) {
+                    $wrapper['proxy']->___repose_delete($session);
+                    break;
+                }
+            }
+        }
+     }
+
+    /**
      * Set of all proxies marked as persisted.
      * @param repose_Session $session Session
      * @return array
@@ -217,7 +244,7 @@ class repose_InstanceCache {
      */
     public function flush($session) {
         foreach ( $this->proxies as $id => $proxy ) {
-            if ( $proxy->___repose_isDirty($session) or ! $proxy->___repose_isPersisted() ) {
+            if ( $proxy->___repose_isDeleted() or ( ! $proxy->___repose_isPersisted() ) or $proxy->___repose_isDirty($session) ) {
                 $proxy->___repose_flush($session);
             }
         }
@@ -242,6 +269,61 @@ class repose_InstanceCache {
 
         // Delete the reference to our new ID from our old primary key.
         if ( $newPk != $oldPk ) unset($this->identityMap[$clazz][$oldPk]);
+
+    }
+
+    /**
+     * Register a relationship
+     * @param repose_Session $session Session
+     * @param repose_IProxy $referree Referree
+     * @param repose_IProxy $referrer Referrer
+     * @param repose_MappedClassProperty $property Property
+     */
+    public function registerRelationship($session, $referree, $referrer, $property) {
+
+        $referreeId = $referree->___repose_id();
+        $referrerId = $referrer->___repose_id();
+        $propertyName = $property->name();
+
+        if ( ! isset($this->referrerMap[$referreeId]) ) {
+            // Ensure the referrer map array for this referree exists.
+            $this->referrerMap[$referreeId] = array();
+        }
+
+        if ( ! isset($this->referrerMap[$referreeId][$referrerId]) ) {
+            // Ensure the referrer map array for this referree exists.
+            $this->referrerMap[$referreeId][$referrerId] = array();
+        }
+
+        $this->referrerMap[$referreeId][$referrerId][$propertyName] = true;
+
+    }
+
+    /**
+     * Prune relationships
+     * @param repose_Session $session Session
+     * @param repose_IProxy $referree Referree
+     */
+    public function pruneRelationship($session, $referree) {
+        $referreeId = $referree->___repose_id();
+        print "Pruning relationships pointing to:\n";
+        print_r($referree);
+        print_r($this->referrerMap);
+        if ( isset($this->referrerMap[$referreeId]) ) {
+            foreach ( $this->referrerMap[$referreeId] as $referrerId => $properties ) {
+                $referrer = $this->proxies[$referrerId];
+                foreach ( $properties as $propertyName => $dummy ) {
+                    $referrer->___repose_propertySetter(
+                        $session,
+                        $propertyName,
+                        null
+                    );
+                    unset($this->referrerMap[$referreeId][$referrerId][$propertyName]);
+                }
+            }
+        }
+
+
 
     }
 

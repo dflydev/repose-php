@@ -39,7 +39,8 @@ class repose_Session {
      * @param string $clazz Class name
      * @return object Proxy
      */
-    public function add($instance, $clazz = null) {
+    public function add($instance = null, $clazz = null) {
+        if ( $instance === null ) return null;
         return $this->instanceCache->add($this, $instance, $clazz);
     }
 
@@ -73,6 +74,7 @@ class repose_Session {
      * @param object $instance Object instance
      */
     public function delete($instance) {
+        return $this->instanceCache->delete($this, $instance);
     }
 
     /**
