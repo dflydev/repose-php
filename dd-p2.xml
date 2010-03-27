@@ -1,0 +1,35 @@
+<packages xmlns="http://dd-p2.dflydev.com/2010">
+    <package>
+        <version>0.0.1</version>
+        <name>Repose PHP ORM</name>
+        <url>http://repose-php.org/</url>
+        <copyright>Copyright (c) 2009,2010 Dragonfly Development</copyright>
+        <license>Licensed under the New BSD License.</license>
+        <files>
+            <file name="README" />
+            <file name="LICENSE" />
+            <file name="tests/README" />
+            <glob name="tests" pattern="tests/*.php" />
+            <glob name="testModels" pattern="tests/model/*.php" />
+            <glob name="libraries" pattern="lib/*.php" />
+            <glob name="includes" pattern="lib/*.inc" />
+        </files>
+        <outputs>
+            <output name="repose-dev">
+                <includeFile name="README" />
+                <includeFile name="LICENSE" />
+                <includeFile name="tests/README" />
+                <includeGlob name="tests" />
+                <includeGlob name="testModels" />
+                <includeGlob name="libraries" />
+                <includeGlob name="includes" />
+            </output>
+            <output name="repose">
+                <includeFile name="README" />
+                <includeFile name="LICENSE" />
+                <includeGlob name="libraries" stripPrefix="lib/" />
+                <includeGlob name="includes" stripPrefix="lib/" />
+            </output>
+        </outputs>
+    </package>
+</packages>
