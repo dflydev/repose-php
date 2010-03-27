@@ -4,6 +4,8 @@
  * @package repose
  */
 
+require_once('repose_QueryResponse.php');
+
 /**
  * Query
  * @package repose
@@ -41,8 +43,10 @@ class repose_Query {
     private $sql = null;
 
     protected $session;
-    public function __construct($session, $queryString) {
+    protected $mapping;
+    public function __construct($session, $mapping, $queryString) {
         $this->session = $session;
+        $this->mapping = $mapping;
         $this->parseQueryString($queryString);
         $this->sql = $this->generateSql();
     }
@@ -64,7 +68,7 @@ class repose_Query {
         $fromInfo['tableName'] = $config->tableName();
         $fromInfo['path'] = $path === null ? $fromInfo['alias'] : $path;
         $primaryKey = $config->primaryKey();
-        $fromInfo['primaryKeyColumnName'] = $primaryKey->property()->columnName($this->session->mapping());
+        $fromInfo['primaryKeyColumnName'] = $primaryKey->property()->columnName($this->mapping);
         $fromInfo['primaryKeyPropertyName'] = $primaryKey->property()->name();;
         $this->fromActualAlias[$fromInfo['actualAlias']] = $this->fromIdx;
         $this->fromAlias[$fromInfo['alias']] = $this->fromIdx;
@@ -93,7 +97,7 @@ class repose_Query {
                     'propertyName' => $property->name(),
                 );
                 $this->selectExpressions[] =
-                    $from['actualAlias'] . '.' . $property->columnName($this->session->mapping()) . ' AS ' . $selectInfo['actualAlias'];
+                    $from['actualAlias'] . '.' . $property->columnName($this->mapping) . ' AS ' . $selectInfo['actualAlias'];
 
                 $this->selectActualAlias[$selectInfo['actualAlias']] = $this->selectIdx;
                 if ( ! isset($this->selectPath[$selectInfo['path']]) ) {
@@ -131,7 +135,7 @@ class repose_Query {
                                 $propertyName
                             );
 
-                            $rawWhere = preg_replace('/' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->session->mapping()), $rawWhere);
+                            $rawWhere = preg_replace('/' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $rawWhere);
 
                         }
                     }
@@ -235,7 +239,8 @@ class repose_Query {
                 }
             }
         }
-        return $results;;
+
+        return new repose_QueryResponse($results);
 
     }
     public function generateSql() {
@@ -266,9 +271,9 @@ class repose_Query {
                 $leftJoinExpressions[] =
                     $from['tableName'] . ' AS ' . $from['actualAlias'] .
                     ' ON (' .
-                    $from['actualAlias'] .'.' . $property->foreignKey($this->session->mapping()) .
+                    $from['actualAlias'] .'.' . $property->foreignKey($this->mapping) .
                     ' = ' .
-                    $relatedFrom['actualAlias'] . '.' . $property->columnName($this->session->mapping()) .
+                    $relatedFrom['actualAlias'] . '.' . $property->columnName($this->mapping) .
                     ')';
             } else {
                 $joinExpressions[] =

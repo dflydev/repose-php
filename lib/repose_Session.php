@@ -8,6 +8,7 @@ require_once('repose_InstanceCache.php');
 require_once('repose_IEngine.php');
 require_once('repose_Mapping.php');
 require_once('repose_Query.php');
+require_once('repose_FluidQuery.php');
 
 /**
  * Session
@@ -95,6 +96,9 @@ class repose_Session {
 
     /**
      * Execute a query.
+     * @param string $queryString Query
+     * @param array $params Params
+     * @return repose_QueryResponse
      */
     public function execute($queryString, $params) {
         $query = $this->query($queryString);
@@ -105,6 +109,15 @@ class repose_Session {
      * Remove an object instance from the Session.
      */
     public function expunge($instance) {
+    }
+
+    /**
+     * Find objects
+     * @param string $from From
+     * @return repose_FluidQuery
+     */
+    public function find($from) {
+        return new repose_FluidQuery($this, $this->mapping, $from);
     }
 
     /**
@@ -136,10 +149,10 @@ class repose_Session {
     /**
      * Create a query instance.
      * @param string $queryString Query
-     * @return repose_Query
+     * @return repose_QueryResponse
      */
     public function query($queryString) {
-        return new repose_Query($this, $queryString);
+        return new repose_Query($this, $this->mapping, $queryString);
     }
 
     /**
