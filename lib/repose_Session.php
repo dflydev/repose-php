@@ -268,6 +268,10 @@ class repose_Session {
 
     /**
      * Destroy
+     *
+     * Properly cleans up all of the resources used by the session.
+     * A destroyed Session is not safe to use as its state is not
+     * guaranteed.
      */
     public function destroy() {
         $this->instanceCache->destroy();
