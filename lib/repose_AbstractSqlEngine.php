@@ -21,11 +21,11 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @param repose_IProxy $proxy Proxy
      */
     public function persist(repose_Session $session, repose_IProxy $proxy) {
-        $mappedClass = $proxy->___repose_mappedClass($session);
+        $mappedClass = $proxy->___repose_mappedClass();
         $data = $this->normalizeColumnData(
             $session,
             $mappedClass,
-            $proxy->___repose_currentData($session)
+            $proxy->___repose_currentData()
         );
         return $this->sqlInsert($mappedClass->tableName(), $data);
     }
@@ -39,16 +39,16 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @param repose_IProxy $proxy Proxy
      */
     public function update(repose_Session $session, repose_IProxy $proxy) {
-        $mappedClass = $proxy->___repose_mappedClass($session);
+        $mappedClass = $proxy->___repose_mappedClass();
         $data = $this->normalizeColumnData(
             $session,
             $mappedClass,
-            $proxy->___repose_changedData($session)
+            $proxy->___repose_changedData()
         );
         $pkData = $this->normalizeColumnData(
             $session,
             $mappedClass,
-            $proxy->___repose_primaryKeyData($session)
+            $proxy->___repose_primaryKeyData()
         );
         return $this->sqlUpdate($mappedClass->tableName(), $data, $pkData);
     }
@@ -62,11 +62,11 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @param repose_IProxy $proxy Proxy
      */
     public function delete(repose_Session $session, repose_IProxy $proxy) {
-        $mappedClass = $proxy->___repose_mappedClass($session);
+        $mappedClass = $proxy->___repose_mappedClass();
         $pkData = $this->normalizeColumnData(
             $session,
             $mappedClass,
-            $proxy->___repose_primaryKeyData($session)
+            $proxy->___repose_primaryKeyData()
         );
         return $this->sqlDelete($mappedClass->tableName(), $pkData);
     }
@@ -101,7 +101,7 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
                 if ( $value === null ) {
                     $columnData[$columnName] = null;
                 } else {
-                    $columnData[$columnName] = $value->___repose_primaryKeyValue($session);
+                    $columnData[$columnName] = $value->___repose_primaryKeyValue();
                 }
             } else {
                 $columnData[$columnName] = $value;

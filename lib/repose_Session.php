@@ -30,7 +30,7 @@ class repose_Session {
     public function __construct(repose_IEngine $engine, repose_Mapping $mapping) {
         $this->engine = $engine;
         $this->mapping = $mapping;
-        $this->instanceCache = new repose_InstanceCache();
+        $this->instanceCache = new repose_InstanceCache($this);
     }
 
     /**
@@ -41,7 +41,7 @@ class repose_Session {
      */
     public function add($instance = null, $clazz = null) {
         if ( $instance === null ) return null;
-        return $this->instanceCache->add($this, $instance, $clazz);
+        return $this->instanceCache->add($instance, $clazz);
     }
 
     /**
@@ -51,7 +51,7 @@ class repose_Session {
      * @return object Proxy
      */
     public function addFromData($clazz, $data) {
-        return $this->instanceCache->addFromData($this, $clazz, $data);
+        return $this->instanceCache->addFromData($clazz, $data);
     }
 
     /**
@@ -59,7 +59,7 @@ class repose_Session {
      * @return array
      */
     public function pending() {
-        return $this->instanceCache->pending($this);
+        return $this->instanceCache->pending();
     }
 
     /**
@@ -74,7 +74,7 @@ class repose_Session {
      * @param object $instance Object instance
      */
     public function delete($instance) {
-        return $this->instanceCache->delete($this, $instance);
+        return $this->instanceCache->delete($instance);
     }
 
     /**
@@ -82,7 +82,7 @@ class repose_Session {
      * @return array
      */
     public function deleted() {
-        return $this->instanceCache->deleted($this);
+        return $this->instanceCache->deleted();
     }
 
     /**
@@ -90,7 +90,7 @@ class repose_Session {
      * @return array
      */
     public function dirty() {
-        return $this->instanceCache->dirty($this);
+        return $this->instanceCache->dirty();
     }
 
     /**
@@ -111,7 +111,7 @@ class repose_Session {
      * Flush object changes to the database.
      */
     public function flush() {
-        $this->instanceCache->flush($this);
+        $this->instanceCache->flush();
     }
 
     /**
@@ -267,11 +267,12 @@ class repose_Session {
     }
 
     /**
-     * Instance cache
-     * @return repose_InstanceCache
+     * Destroy
      */
-    public function instanceCache() {
-        return $this->instanceCache;
+    public function destroy() {
+        $this->instanceCache->destroy();
+        $this->engine = null;
+        $this->mapping = null;
     }
 
 }

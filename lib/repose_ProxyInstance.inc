@@ -19,6 +19,18 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     private $___repose_id;
 
     /**
+     * Session
+     * @var repose_Session
+     */
+    private $___repose_session;
+
+    /**
+     * Instance cache
+     * @var repose_Session
+     */
+    private $___repose_instanceCache;
+
+    /**
      * Mapped class name
      * @var string
      */
@@ -64,16 +76,19 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     /**
      * Initialization
      * @param repose_Session $session Session
+     * @param repose_InstanceCache $instanceCache Instance cache
      * @param string $proxyClazz Proxy class
      * @param string $clazz Class
      */
-    public function ___repose_init($session, $proxyClazz, $clazz, $data = null, $isPersisted = false) {
+    public function ___repose_init($session, $instanceCache, $proxyClazz, $clazz, $data = null, $isPersisted = false) {
         $this->___repose_id = repose_Uuid::v4();
-        $this->___repose_clazz = $clazz;
+        $this->___repose_session = $session;
+        $this->___repose_instanceCache = $instanceCache;
         $this->___repose_proxyClazz = $proxyClazz;
+        $this->___repose_clazz = $clazz;
         $this->___repose_isPersisted = $isPersisted;
-        $this->___repose_populateInstanceFromData($session, $data);
-        $this->___repose_populateHistoryFromInstance($session);
+        $this->___repose_populateInstanceFromData($data);
+        $this->___repose_populateHistoryFromInstance();
         $this->___repose_isDeleted = false;
     }
 
@@ -103,40 +118,39 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * A mapped class
-     * @param repose_Session $session Session
      * @param string $clazz Class
      * @return repose_MappedClass
      */
-    public function ___repose_mappedClass($session, $clazz = null) {
+    public function ___repose_mappedClass($clazz = null) {
         if ( $clazz === null ) $clazz = $this->___repose_clazz;
-        return $session->getMappedClass($clazz);
+        return $this->___repose_session->getMappedClass($clazz);
     }
 
     /**
      * Get the properties for a class
-     * @param repose_Session $session Session
      * @param string $clazz Class
      * @return array
      */
-    public function ___repose_getProperties($session, $clazz = null) {
+    public function ___repose_getProperties($clazz = null) {
         if ( $clazz === null ) $clazz = $this->___repose_clazz;
-        return $session->getProperties($clazz);
+        return $this->___repose_session->getProperties($clazz);
     }
 
     /**
      * Populate cache from current instance values
-     * @param repose_Session $session Session
      */
-    public function ___repose_populateHistoryFromInstance($session) {
-        foreach ( $this->___repose_getProperties($session) as $property ) {
+    public function ___repose_populateHistoryFromInstance() {
+        foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
             if ( isset($this->$name) ) {
                 $value = $this->$name;
                 if ( $property->isObject() ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $this->$name = $value = $session->add($value);
+                        $this->$name = $value = $this->___repose_session->add(
+                            $value
+                        );
                     }
-                    $session->instanceCache()->registerRelationship($session, $value, $this, $property);
+                    $this->___repose_instanceCache->registerRelationship($value, $this, $property);
                 }
                 if ( $property->isObject() and $value and $value instanceof repose_IProxy and $value->___repose_isDeleted() ) {
                     $this->___repose_history[$name] = null;
@@ -149,19 +163,18 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Populate current instance from data
-     * @param repose_Session $session Session
      */
-    public function ___repose_populateInstanceFromData($session, $data = null) {
+    public function ___repose_populateInstanceFromData($data = null) {
         if ( $data === null ) return;
-        foreach ( $this->___repose_getProperties($session) as $property ) {
+        foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
             if ( isset($data[$name]) ) {
                 $value = $data[$name];
                 if ( $property->isObject() ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $value = $session->add($value);
+                        $value = $this->___repose_session->add($value);
                     }
-                    $session->instanceCache()->registerRelationship($session, $value, $this, $property);
+                    $this->___repose_instanceCache->registerRelationship($value, $this, $property);
                 }
                 if ( $property->isObject() and $value and $value instanceof repose_IProxy and $value->___repose_isDeleted() ) {
                     $this->$name = null;
@@ -174,10 +187,9 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Is we dirty?
-     * @param repose_Session $session Session
      * @return bool
      */
-    public function ___repose_isDirty($session) {
+    public function ___repose_isDirty() {
         foreach ( $this->___repose_history as $k => $v ) {
             $vTest = isset($this->$k) ? $this->$k : null;
             if ( $v !== $vTest ) return true;
@@ -187,21 +199,20 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Flush relationships
-     * @param repose_Session $session Session
      */
-    public function ___repose_flushRelationships($session) {
-        foreach ( $this->___repose_getProperties($session) as $property ) {
+    public function ___repose_flushRelationships() {
+        foreach ( $this->___repose_getProperties() as $property ) {
             if ( $property->isObject() ) {
                 $name = $property->name();
                 $value = $this->$name;
                 if ( $value !== null ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $this->name = $value = $session->add($value);
+                        $this->name = $value = $this->___repose_session->add($value);
                     }
                     if ( ! $value->___repose_isPersisted() ) {
-                        $value->___repose_persist($session);
-                    } elseif ( $value->___repose_isDirty($session) ) {
-                        $value->___repose_flush($session);
+                        $value->___repose_persist();
+                    } elseif ( $value->___repose_isDirty() ) {
+                        $value->___repose_flush();
                     }
                 }
             }
@@ -210,9 +221,8 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Flush
-     * @param repose_Session $session Session
      */
-    public function ___repose_flush($session) {
+    public function ___repose_flush() {
 
         // Avoid deep recursion.
         if ( $this->___repose_isFlushing ) return;
@@ -222,7 +232,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         $this->___repose_isFlushing = true;
 
         // Try to recursively flush our relationships.
-        $this->___repose_flushRelationships($session);
+        $this->___repose_flushRelationships();
 
         // Did we flush?
         $didFlush = true;
@@ -230,7 +240,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         if ( $this->___repose_isDeleted ) {
             if ( $this->___repose_isPersisted ) {
                 // Delete this proxy from our engine.
-                $newId = $session->engine()->delete($session, $this);
+                $newId = $this->___repose_session->engine()->delete($this->___repose_session, $this);
                 $this->___repose_isPersisted = false;
             }
         } elseif ( ! $this->___repose_isPersisted ) {
@@ -241,10 +251,10 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             //
 
             // Persist this proxy in our engine.
-            $newId = $session->engine()->persist($session, $this);
+            $newId = $this->___repose_session->engine()->persist($this->___repose_session, $this);
 
             $clazz = $this->___repose_clazz;
-            $primaryKey = $session->getPrimaryKey($this->___repose_clazz);
+            $primaryKey = $this->___repose_session->getPrimaryKey($this->___repose_clazz);
 
             if ( ! $primaryKey->isComposite() ) {
                 $primaryKeyProperty = $primaryKey->property();
@@ -255,14 +265,14 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             // And now we know...
             $this->___repose_isPersisted = true;
 
-        } elseif ( $this->___repose_isDirty($session) ) {
+        } elseif ( $this->___repose_isDirty() ) {
 
             //
             // If we have been persisted, we should update
             // the proxy in the engine.
             //
 
-            $session->engine()->update($session, $this);
+            $this->___repose_session->engine()->update($this->___repose_session, $this);
 
         } else {
             // Nothing to flush!
@@ -272,15 +282,15 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         if ( $didFlush ) {
 
             // Capture the primary keys from our history and current state.
-            $oldPk = $this->___repose_serializedPrimaryKey($session, 'history');
-            $newPk = $this->___repose_serializedPrimaryKey($session, 'current');
+            $oldPk = $this->___repose_serializedPrimaryKey('history');
+            $newPk = $this->___repose_serializedPrimaryKey('current');
 
             // Sync history from our current state.
-            $this->___repose_populateHistoryFromInstance($session);
+            $this->___repose_populateHistoryFromInstance();
 
             // Move things around as needed inside of the identity map
             // based on our old and new primary keys.
-            $session->instanceCache()->updateIdentityMap(
+            $this->___repose_instanceCache->updateIdentityMap(
                 $this->___repose_id,
                 $this->___repose_clazz,
                 $oldPk,
@@ -296,11 +306,10 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Derive the actual data store value for a property
-     * @param repose_Session $session Session
      * @param repose_MappedClassProperty $property Property
      * @param mixed $value Current value
      */
-    protected function derivePropertyValue($session, $property, $value = null) {
+    protected function derivePropertyValue($property, $value = null) {
         if ( $property->isObject() ) {
             return $value;
         } else {
@@ -310,16 +319,14 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Current data
-     * @param repose_Session $session Session
      * @return array
      */
-    public function ___repose_currentData($session) {
+    public function ___repose_currentData() {
         $data = array();
-        foreach ( $this->___repose_getProperties($session) as $property ) {
+        foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
             if ( isset($this->$name) ) {
                 $data[$name] = $this->derivePropertyValue(
-                    $session,
                     $property,
                     $this->$name
                 );
@@ -330,16 +337,14 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Changed data
-     * @param repose_Session $session Session
      * @return array
      */
-    public function ___repose_changedData($session) {
+    public function ___repose_changedData() {
         $data = array();
-        foreach ( $this->___repose_getProperties($session) as $property ) {
+        foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
             if ( ! isset($this->___repose_history[$name]) or $this->$name != $this->___repose_history[$name] ) {
                 $data[$name] = $this->derivePropertyValue(
-                    $session,
                     $property,
                     $this->$name
                 );
@@ -350,13 +355,12 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Primary key data
-     * @param repose_Session $session Session
      * @param string $which Which data? 'current' or 'history'
      */
-    public function ___repose_primaryKeyData($session, $which = 'current') {
+    public function ___repose_primaryKeyData($which = 'current') {
         $data = array();
         $clazz = $this->___repose_clazz;
-        foreach ( $session->getPrimaryKey($clazz)->properties() as $property ) {
+        foreach ( $this->___repose_session->getPrimaryKey($clazz)->properties() as $property ) {
             $name = $property->name();
             switch($which) {
                 case 'current':
@@ -374,44 +378,48 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Primary key value
-     * @param repose_Session $session Session
      * @param string $which Which data? 'current' or 'history'
      */
-    public function ___repose_primaryKeyValue($session, $which = 'current') {
-        $data = $this->___repose_primaryKeyData($session, $which);
+    public function ___repose_primaryKeyValue($which = 'current') {
+        $data = $this->___repose_primaryKeyData($which);
         foreach ( $data as $key => $value ) { return $value; }
         return NULL;
     }
 
     /**
      * Serialized primary key data
-     * @param repose_Session $session Session
      * @param string $which Which data? 'current' or 'history'
      */
-    public function ___repose_serializedPrimaryKey($session, $which = 'current') {
-        return $session->serializePrimaryKey(
-            $this->___repose_primaryKeyData($session, $which),
+    public function ___repose_serializedPrimaryKey($which = 'current') {
+        return $this->___repose_session->serializePrimaryKey(
+            $this->___repose_primaryKeyData($which),
             $this->___repose_id
         );
     }
 
     /**
      * Delete
-     * @param repose_Session $session Session
      */
-    public function ___repose_delete($session) {
+    public function ___repose_delete() {
         $this->___repose_isDeleted = true;
-        $session->instanceCache()->pruneRelationship($session, $this);
+        $this->___repose_instanceCache->pruneRelationship($this);
     }
 
     /**
      * Set a property
-     * @param repose_Session $session Session
      * @param string $name Property name
      * @param mixed $value Value
      */
-    public function ___repose_propertySetter($session, $name, $value = null) {
+    public function ___repose_propertySetter($name, $value = null) {
         $this->$name = $value;
+    }
+
+    /**
+     * Destroy
+     */
+    public function destroy() {
+        $this->session = null;
+        $this->instanceCache = null;
     }
 
 }

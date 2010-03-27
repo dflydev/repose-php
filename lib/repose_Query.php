@@ -195,7 +195,6 @@ class repose_Query {
                     $parentObject = $objects[$parent];
 
                     $parentObject['object']->___repose_propertySetter(
-                        $this->session,
                         $propertyName,
                         $objectInfo['object']
                     );

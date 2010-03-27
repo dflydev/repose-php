@@ -11,6 +11,18 @@
 class repose_ProxyGenerator {
 
     /**
+     * Session
+     * @var repose_Session
+     */
+    protected $session;
+
+    /**
+     * Instance cache
+     * @var repose_InstanceCache
+     */
+    protected $instanceCache;
+
+    /**
      * Proxy template
      * @var string
      */
@@ -23,12 +35,21 @@ class repose_ProxyGenerator {
     static private $PROXIES_LOADED = array();
 
     /**
-     * Make a proxy object
+     * Constructor
      * @param repose_Session $session Session
+     * @param repose_InstanceCache $instanceCache Instance cache
+     */
+    public function __construct(repose_Session $session, repose_InstanceCache $instanceCache) {
+        $this->session = $session;
+        $this->instanceCache = $instanceCache;
+    }
+
+    /**
+     * Make a proxy object
      * @param string $clazz Class name
      * @param object $instance Object instance
      */
-    public function makeProxy($session, $clazz, $instance, $data = null, $isPersisted = false) {
+    public function makeProxy($clazz, $instance, $data = null, $isPersisted = false) {
         $proxy = null;
         $proxyClazz = null;
         if ( $instance instanceof repose_IProxy ) {
@@ -66,7 +87,14 @@ class repose_ProxyGenerator {
             }
 
         }
-        $proxy->___repose_init($session, $proxyClazz, $clazz, $data, $isPersisted);
+        $proxy->___repose_init(
+            $this->session,
+            $this->instanceCache,
+            $proxyClazz,
+            $clazz,
+            $data,
+            $isPersisted
+        );
         return $proxy;
     }
 
@@ -193,6 +221,14 @@ class repose_ProxyGenerator {
 
         return preg_replace('/PROXY_TEMPLATE/', $clazz, self::$PROXY_TEMPLATE);
 
+    }
+
+    /**
+     * Destroy
+     */
+    public function destroy() {
+        $this->session = null;
+        $this->instanceCache = null;
     }
 
 }

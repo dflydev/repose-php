@@ -15,6 +15,12 @@ require_once('repose_Uuid.php');
 class repose_InstanceCache {
 
     /**
+     * Session
+     * @var repose_Session
+     */
+    protected $session;
+
+    /**
      * Cache of instance proxies
      * @var array
      */
@@ -46,12 +52,14 @@ class repose_InstanceCache {
 
     /**
      * Constructor.
+     * @param repose_Session $session Session
      */
-    public function __construct() {
+    public function __construct(repose_Session $session) {
+        $this->session = $session;
         $this->proxies = array();
         $this->identityMap = array();
         $this->wrappers = array();
-        $this->proxyGenerator = new repose_ProxyGenerator();
+        $this->proxyGenerator = new repose_ProxyGenerator($session, $this);
     }
 
     /**
@@ -72,12 +80,11 @@ class repose_InstanceCache {
 
     /**
      * Add an instance to the cache.
-     * @param repose_Session $session Session
      * @param object $instance Object instance
      * @param string $clazz Class name
      * @return object Proxy
      */
-    public function add($session, $instance, $clazz = null) {
+    public function add($instance, $clazz = null) {
 
         // TODO We should check to make certain this instance is cached
         // otherwise this could potentially be an instance from another
@@ -107,7 +114,7 @@ class repose_InstanceCache {
             }
         }
 
-        $proxy = $this->proxyGenerator->makeProxy($session, $clazz, $instance);
+        $proxy = $this->proxyGenerator->makeProxy($clazz, $instance);
 
         // Store a reference to the instance and to the proxy as a
         // simple array wrapper. We will reference this later if
@@ -121,7 +128,7 @@ class repose_InstanceCache {
         $this->proxies[$proxy->___repose_id()] = $proxy;
 
         // Store a map to this proxy by its internal ID.
-        $this->identityMap[$clazz][$proxy->___repose_serializedPrimaryKey($session)] = $proxy->___repose_id();
+        $this->identityMap[$clazz][$proxy->___repose_serializedPrimaryKey()] = $proxy->___repose_id();
 
         return $proxy;
 
@@ -129,12 +136,11 @@ class repose_InstanceCache {
 
     /**
      * Add an instance to the cache.
-     * @param repose_Session $session Session
      * @param string $clazz Class name
      * @param array $data Data
      * @return object Proxy
      */
-    public function addFromData($session, $clazz, $data) {
+    public function addFromData($clazz, $data) {
 
         if ( ! isset($this->identityMap[$clazz]) ) {
             // Ensure the identity map array for this class exists.
@@ -145,7 +151,6 @@ class repose_InstanceCache {
         $instance = $reflectionClass->newInstance();
 
         $proxy = $this->proxyGenerator->makeProxy(
-            $session,
             $clazz,
             $instance,
             $data,
@@ -156,7 +161,7 @@ class repose_InstanceCache {
         $this->proxies[$proxy->___repose_id()] = $proxy;
 
         // Store a map to this proxy by its internal ID.
-        $this->identityMap[$clazz][$proxy->___repose_serializedPrimaryKey($session)] = $proxy->___repose_id();
+        $this->identityMap[$clazz][$proxy->___repose_serializedPrimaryKey()] = $proxy->___repose_id();
 
         return $proxy;
 
@@ -164,19 +169,18 @@ class repose_InstanceCache {
 
     /**
      * Delete an instance from the cache.
-     * @param repose_Session $session Session
      * @param object $instance Object instance
      * @return object Proxy
      */
-    public function delete($session, $instance) {
+    public function delete($instance) {
         if ( $instance instanceof repose_IProxy ) {
-            $instance->___repose_delete($session);
+            $instance->___repose_delete();
             return;
         }
         foreach ( $this->wrappers as $clazz => $wrappers ) {
             foreach ( $wrappers as $id => $wrapper ) {
                 if ( $wrapper['instance'] === $instance ) {
-                    $wrapper['proxy']->___repose_delete($session);
+                    $wrapper['proxy']->___repose_delete();
                     break;
                 }
             }
@@ -185,10 +189,9 @@ class repose_InstanceCache {
 
     /**
      * Set of all proxies marked as persisted.
-     * @param repose_Session $session Session
      * @return array
      */
-    public function persisted($session) {
+    public function persisted() {
         $results = array();
         foreach ( $this->proxies as $id => $proxy ) {
             if ( $proxy->___repose_isPersisted() ) $results[] = $proxy;
@@ -198,10 +201,9 @@ class repose_InstanceCache {
 
     /**
      * Set of all proxies marked as pending.
-     * @param repose_Session $session Session
      * @return array
      */
-    public function pending($session) {
+    public function pending() {
         $results = array();
         foreach ( $this->wrappers as $clazz => $wrappers ) {
             foreach ( $wrappers as $id => $wrapper ) {
@@ -218,34 +220,31 @@ class repose_InstanceCache {
 
     /**
      * Set of all proxies marked as deleted.
-     * @param repose_Session $session Session
      * @return array
      */
-    public function deleted($session) {
+    public function deleted() {
         // TODO Implement this
     }
 
     /**
      * Set of all proxies considered dirty.
-     * @param repose_Session $session Session
      * @return array
      */
-    public function dirty($session) {
+    public function dirty() {
         $results = array();
         foreach ( $this->proxies as $id => $proxy ) {
-            if ( $proxy->___repose_isDirty($session) ) $results[] = $proxy;
+            if ( $proxy->___repose_isDirty() ) $results[] = $proxy;
         }
         return $results;
     }
 
     /**
      * Flush instances.
-     * @param repose_Session $session Session
      */
-    public function flush($session) {
+    public function flush() {
         foreach ( $this->proxies as $id => $proxy ) {
-            if ( $proxy->___repose_isDeleted() or ( ! $proxy->___repose_isPersisted() ) or $proxy->___repose_isDirty($session) ) {
-                $proxy->___repose_flush($session);
+            if ( $proxy->___repose_isDeleted() or ( ! $proxy->___repose_isPersisted() ) or $proxy->___repose_isDirty() ) {
+                $proxy->___repose_flush();
             }
         }
     }
@@ -274,12 +273,11 @@ class repose_InstanceCache {
 
     /**
      * Register a relationship
-     * @param repose_Session $session Session
      * @param repose_IProxy $referree Referree
      * @param repose_IProxy $referrer Referrer
      * @param repose_MappedClassProperty $property Property
      */
-    public function registerRelationship($session, $referree, $referrer, $property) {
+    public function registerRelationship($referree, $referrer, $property) {
 
         $referreeId = $referree->___repose_id();
         $referrerId = $referrer->___repose_id();
@@ -301,20 +299,15 @@ class repose_InstanceCache {
 
     /**
      * Prune relationships
-     * @param repose_Session $session Session
      * @param repose_IProxy $referree Referree
      */
-    public function pruneRelationship($session, $referree) {
+    public function pruneRelationship($referree) {
         $referreeId = $referree->___repose_id();
-        print "Pruning relationships pointing to:\n";
-        print_r($referree);
-        print_r($this->referrerMap);
         if ( isset($this->referrerMap[$referreeId]) ) {
             foreach ( $this->referrerMap[$referreeId] as $referrerId => $properties ) {
                 $referrer = $this->proxies[$referrerId];
                 foreach ( $properties as $propertyName => $dummy ) {
                     $referrer->___repose_propertySetter(
-                        $session,
                         $propertyName,
                         null
                     );
@@ -323,7 +316,22 @@ class repose_InstanceCache {
             }
         }
 
+    }
 
+    /**
+     * Destroy
+     */
+    public function destroy() {
+
+        $this->session = null;
+
+        $this->proxyGenerator->destroy();
+        $this->proxyGenerator = null;
+
+        foreach ( $this->proxies as $proxy ) { $proxy->destroy(); }
+        $this->proxies = null;
+
+        $this->wrappers = null;
 
     }
 
