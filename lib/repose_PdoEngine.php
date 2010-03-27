@@ -41,8 +41,6 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
             $placeholders[] = ':' . $columnName;
         }
         $sql = 'INSERT INTO ' . $tableName . ' (' . implode(',', $columns) . ') VALUES (' . implode(',', $placeholders) . ')';
-        print " [ $sql ]\n";
-        print_r($values);
         $statement = $this->dataSource->prepare($sql);
         $statement->execute($values);
         return $this->dataSource->lastInsertId();
@@ -67,10 +65,25 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
             $values['where_' . $columnName] = $value;
         }
         $sql = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $sets) . ' WHERE ' . implode(' AND ', $wheres);
-        print " [ $sql ]\n";
-        print_r($values);
         $statement = $this->dataSource->prepare($sql);
         $statement->execute($values);
+    }
+
+    /**
+     * Select data
+     * @param string $selectQuery Select query
+     * @param array $params Associative array with bind params
+     * @return array
+     */
+    protected function sqlSelect($selectQuery, $params = null) {
+        $rows = array();
+        if ( ! is_array($params) ) $params = array();
+        $statement = $this->dataSource->prepare($selectQuery);
+        $statement->execute($params);
+        foreach ( $statement->fetchAll(PDO::FETCH_ASSOC) as $row ) {
+            $rows[] = $row;
+        }
+        return $rows;
     }
 
 }

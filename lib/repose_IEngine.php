@@ -43,6 +43,18 @@ interface repose_IEngine {
      */
     public function delete(repose_Session $session, repose_IProxy $proxy);
 
+    /**
+     * Perform a query
+     *
+     * Think SELECT WHERE.
+     *
+     * @param repose_Session $session Session
+     * @param string $queryString Query string
+     * @param array $params Query params
+     * @return array
+     */
+    public function query(repose_Session $session, $queryString, $params = null);
+
 }
 
 ?>

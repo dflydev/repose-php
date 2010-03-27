@@ -7,6 +7,7 @@
 require_once('repose_InstanceCache.php');
 require_once('repose_IEngine.php');
 require_once('repose_Mapping.php');
+require_once('repose_Query.php');
 
 /**
  * Session
@@ -93,7 +94,9 @@ class repose_Session {
     /**
      * Execute a query.
      */
-    public function execute($query, $params) {
+    public function execute($queryString, $params) {
+        $query = $this->query($queryString);
+        return $query->execute($params);
     }
 
     /**
@@ -134,6 +137,7 @@ class repose_Session {
      * @return repose_Query
      */
     public function query($queryString) {
+        return new repose_Query($this, $queryString);
     }
 
     /**
@@ -141,6 +145,16 @@ class repose_Session {
      * @param object $instance Object instance
      */
     public function refresh($instance) {
+    }
+
+    /**
+     * Get a property for the specified class
+     * @param string $clazz Class name
+     * @param string $name Property name
+     * @return repose_MappedClassProperty
+     */
+    public function getProperty($clazz, $name) {
+        return $this->mapping->mappedClassProperty($clazz, $name);
     }
 
     /**

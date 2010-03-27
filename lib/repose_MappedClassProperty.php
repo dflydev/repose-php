@@ -129,7 +129,7 @@ class repose_MappedClassProperty {
      * Class name
      * @return string
      */
-    public function getClassName() {
+    public function className() {
         return $this->className;
     }
 

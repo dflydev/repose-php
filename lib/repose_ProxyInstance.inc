@@ -375,6 +375,16 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         );
     }
 
+    /**
+     * Set a property
+     * @param repose_Session $session Session
+     * @param string $name Property name
+     * @param mixed $value Value
+     */
+    public function ___repose_propertySetter($session, $name, $value = null) {
+        $this->$name = $value;
+    }
+
 }
 
 ?>
