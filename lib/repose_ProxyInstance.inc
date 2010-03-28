@@ -6,6 +6,13 @@
 
 require_once('repose_Uuid.php');
 
+if ( ! class_exists('PROXY_TEMPLATE') ) {
+    /**
+     * Placeholder proxy for the proxy template class
+     */
+    class PROXY_TEMPLATE {}
+}
+
 /**
  * Repox Proxy Instance Class
  * @package repose
@@ -20,15 +27,15 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
     /**
      * Session
-     * @var repose_Session
+     * @var string
      */
-    private $___repose_session;
+    private $___repose_sessionId;
 
     /**
      * Instance cache
-     * @var repose_Session
+     * @var string
      */
-    private $___repose_instanceCache;
+    private $___repose_instanceCacheId;
 
     /**
      * Mapped class name
@@ -82,8 +89,8 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      */
     public function ___repose_init($session, $instanceCache, $proxyClazz, $clazz, $data = null, $isPersisted = false) {
         $this->___repose_id = repose_Uuid::v4();
-        $this->___repose_session = $session;
-        $this->___repose_instanceCache = $instanceCache;
+        $this->___repose_sessionId = $session->id();
+        $this->___repose_instanceCacheId = $instanceCache->id();
         $this->___repose_proxyClazz = $proxyClazz;
         $this->___repose_clazz = $clazz;
         $this->___repose_isPersisted = $isPersisted;
@@ -98,6 +105,22 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      */
     public function ___repose_id() {
         return $this->___repose_id;
+    }
+
+    /**
+     * Get the session
+     * @return repose_Session
+     */
+    public function ___repose_session() {
+        return repose_Session::BY_ID($this->___repose_sessionId);
+    }
+
+    /**
+     * Get the instance cache
+     * @return repose_InstanceCache
+     */
+    public function ___repose_instanceCache() {
+        return repose_InstanceCache::BY_ID($this->___repose_instanceCacheId);
     }
 
     /**
@@ -123,7 +146,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      */
     public function ___repose_mappedClass($clazz = null) {
         if ( $clazz === null ) $clazz = $this->___repose_clazz;
-        return $this->___repose_session->getMappedClass($clazz);
+        return $this->___repose_session()->getMappedClass($clazz);
     }
 
     /**
@@ -133,7 +156,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      */
     public function ___repose_getProperties($clazz = null) {
         if ( $clazz === null ) $clazz = $this->___repose_clazz;
-        return $this->___repose_session->getProperties($clazz);
+        return $this->___repose_session()->getProperties($clazz);
     }
 
     /**
@@ -146,11 +169,11 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                 $value = $this->$name;
                 if ( $property->isObject() ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $this->$name = $value = $this->___repose_session->add(
+                        $this->$name = $value = $this->___repose_session()->add(
                             $value
                         );
                     }
-                    $this->___repose_instanceCache->registerRelationship($value, $this, $property);
+                    $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
                 }
                 if ( $property->isObject() and $value and $value instanceof repose_IProxy and $value->___repose_isDeleted() ) {
                     $this->___repose_history[$name] = null;
@@ -172,9 +195,9 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                 $value = $data[$name];
                 if ( $property->isObject() ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $value = $this->___repose_session->add($value);
+                        $value = $this->___repose_session()->add($value);
                     }
-                    $this->___repose_instanceCache->registerRelationship($value, $this, $property);
+                    $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
                 }
                 if ( $property->isObject() and $value and $value instanceof repose_IProxy and $value->___repose_isDeleted() ) {
                     $this->$name = null;
@@ -207,7 +230,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                 $value = $this->$name;
                 if ( $value !== null ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $this->name = $value = $this->___repose_session->add($value);
+                        $this->name = $value = $this->___repose_session()->add($value);
                     }
                     if ( ! $value->___repose_isPersisted() ) {
                         $value->___repose_persist();
@@ -240,7 +263,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         if ( $this->___repose_isDeleted ) {
             if ( $this->___repose_isPersisted ) {
                 // Delete this proxy from our engine.
-                $newId = $this->___repose_session->engine()->delete($this->___repose_session, $this);
+                $newId = $this->___repose_session()->engine()->delete($this->___repose_session(), $this);
                 $this->___repose_isPersisted = false;
             }
         } elseif ( ! $this->___repose_isPersisted ) {
@@ -251,10 +274,10 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             //
 
             // Persist this proxy in our engine.
-            $newId = $this->___repose_session->engine()->persist($this->___repose_session, $this);
+            $newId = $this->___repose_session()->engine()->persist($this->___repose_session(), $this);
 
             $clazz = $this->___repose_clazz;
-            $primaryKey = $this->___repose_session->getPrimaryKey($this->___repose_clazz);
+            $primaryKey = $this->___repose_session()->getPrimaryKey($this->___repose_clazz);
 
             if ( ! $primaryKey->isComposite() ) {
                 $primaryKeyProperty = $primaryKey->property();
@@ -272,7 +295,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             // the proxy in the engine.
             //
 
-            $this->___repose_session->engine()->update($this->___repose_session, $this);
+            $this->___repose_session()->engine()->update($this->___repose_session(), $this);
 
         } else {
             // Nothing to flush!
@@ -290,7 +313,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
 
             // Move things around as needed inside of the identity map
             // based on our old and new primary keys.
-            $this->___repose_instanceCache->updateIdentityMap(
+            $this->___repose_instanceCache()->updateIdentityMap(
                 $this->___repose_id,
                 $this->___repose_clazz,
                 $oldPk,
@@ -311,6 +334,8 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      */
     protected function derivePropertyValue($property, $value = null) {
         if ( $property->isObject() ) {
+            return $value;
+        } elseif ( $property->isCollection() ) {
             return $value;
         } else {
             return $value;
@@ -360,7 +385,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_primaryKeyData($which = 'current') {
         $data = array();
         $clazz = $this->___repose_clazz;
-        foreach ( $this->___repose_session->getPrimaryKey($clazz)->properties() as $property ) {
+        foreach ( $this->___repose_session()->getPrimaryKey($clazz)->properties() as $property ) {
             $name = $property->name();
             switch($which) {
                 case 'current':
@@ -391,7 +416,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * @param string $which Which data? 'current' or 'history'
      */
     public function ___repose_serializedPrimaryKey($which = 'current') {
-        return $this->___repose_session->serializePrimaryKey(
+        return $this->___repose_session()->serializePrimaryKey(
             $this->___repose_primaryKeyData($which),
             $this->___repose_id
         );
@@ -402,7 +427,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      */
     public function ___repose_delete() {
         $this->___repose_isDeleted = true;
-        $this->___repose_instanceCache->pruneRelationship($this);
+        $this->___repose_instanceCache()->pruneRelationship($this);
     }
 
     /**
@@ -418,8 +443,18 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * Destroy
      */
     public function destroy() {
-        $this->session = null;
-        $this->instanceCache = null;
+        //$this->session = null;
+        //$this->instanceCache = null;
+    }
+
+    /**
+     * Instance Cache by ID
+     * @param string $id Instance Cache ID
+     * @return repose_Session
+     */
+    static public function SESSION($id) {
+        if ( isset(self::$CACHE[$id]) ) return self::$CACHE[$id];
+        return null;
     }
 
 }

@@ -9,12 +9,25 @@ require_once('repose_IEngine.php');
 require_once('repose_Mapping.php');
 require_once('repose_Query.php');
 require_once('repose_FluidQuery.php');
+require_once('repose_Uuid.php');
 
 /**
  * Session
  * @package repose
  */
 class repose_Session {
+
+    /**
+     * Session cache
+     * @var array
+     */
+    static private $CACHE = array();
+
+    /**
+     * ID
+     * @var string
+     */
+    private $id;
 
     /**
      * Instance cache.
@@ -29,9 +42,19 @@ class repose_Session {
      * @param array $options Options
      */
     public function __construct(repose_IEngine $engine, repose_Mapping $mapping) {
+        $this->id = repose_Uuid::v4();
         $this->engine = $engine;
         $this->mapping = $mapping;
         $this->instanceCache = new repose_InstanceCache($this);
+        self::$CACHE[$this->id] = $this;
+    }
+
+    /**
+     * Session ID
+     * return @string
+     */
+    public function id() {
+        return $this->id;
     }
 
     /**
@@ -290,6 +313,19 @@ class repose_Session {
         $this->instanceCache->destroy();
         $this->engine = null;
         $this->mapping = null;
+        if ( array_key_exists($this->id, self::$CACHE) ) {
+            unset(self::$CACHE[$this->id]);
+        }
+    }
+
+    /**
+     * Session by ID
+     * @param string $id Session ID
+     * @return repose_Session
+     */
+    static public function BY_ID($id) {
+        if ( isset(self::$CACHE[$id]) ) return self::$CACHE[$id];
+        return null;
     }
 
 }

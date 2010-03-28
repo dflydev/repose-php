@@ -29,10 +29,16 @@ class repose_MappedClassProperty {
     protected $columnName;
 
     /**
-     * Is object?
+     * Is a object?
      * @var bool
      */
     protected $isObject;
+
+    /**
+     * Is a collection?
+     * @var bool
+     */
+    protected $isCollection;
 
     /**
      * Is primary key?
@@ -61,11 +67,29 @@ class repose_MappedClassProperty {
         $this->name = $name;
         $this->type = isset($config['relationship']) ?
             $config['relationship'] : 'property';
-        $this->isObject = $this->type === 'property' ? false : true;
+        switch($this->type) {
+            case 'property':
+                $this->isObject = false;
+                $this->isCollection = false;
+                break;
+            case 'many-to-one':
+                $this->isObject = true;
+                $this->isCollection = false;
+                break;
+            case 'one-to-many':
+                $this->isObject = false;
+                $this->isCollection = true;
+                break;
+        }
         $this->isPrimaryKey = isset($config['primaryKey']) ? true : false;
         if ( $this->isObject ) {
             if ( ! isset($config['className']) ) {
                 throw new Exception('Object relationship must have class name specified.');
+            }
+            $this->className = $config['className'];
+        } elseif ( $this->isCollection ) {
+            if ( ! isset($config['className']) ) {
+                throw new Exception('Set relationship must have class name specified.');
             }
             $this->className = $config['className'];
         } else {
@@ -105,7 +129,7 @@ class repose_MappedClassProperty {
      * Type
      * @return string
      */
-    public function getType() {
+    public function type() {
         return $this->type;
     }
 
@@ -115,6 +139,14 @@ class repose_MappedClassProperty {
      */
     public function isObject() {
         return $this->isObject;
+    }
+
+    /**
+     * Is a collection?
+     * @return bool
+     */
+    public function isCollection() {
+        return $this->isCollection;
     }
 
     /**

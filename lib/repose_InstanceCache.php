@@ -15,6 +15,18 @@ require_once('repose_Uuid.php');
 class repose_InstanceCache {
 
     /**
+     * Instance Cache cache
+     * @var array
+     */
+    static private $CACHE = array();
+
+    /**
+     * ID
+     * @var string
+     */
+    private $id;
+
+    /**
      * Session
      * @var repose_Session
      */
@@ -55,11 +67,21 @@ class repose_InstanceCache {
      * @param repose_Session $session Session
      */
     public function __construct(repose_Session $session) {
+        $this->id = repose_Uuid::v4();
         $this->session = $session;
         $this->proxies = array();
         $this->identityMap = array();
         $this->wrappers = array();
         $this->proxyGenerator = new repose_ProxyGenerator($session, $this);
+        self::$CACHE[$this->id] = $this;
+    }
+
+    /**
+     * Instance Cache ID
+     * return @string
+     */
+    public function id() {
+        return $this->id;
     }
 
     /**
@@ -333,6 +355,20 @@ class repose_InstanceCache {
 
         $this->wrappers = null;
 
+        if ( array_key_exists($this->id, self::$CACHE) ) {
+            unset(self::$CACHE[$this->id]);
+        }
+
+    }
+
+    /**
+     * Instance Cache by ID
+     * @param string $id Instance Cache ID
+     * @return repose_InstanceCache
+     */
+    static public function BY_ID($id) {
+        if ( isset(self::$CACHE[$id]) ) return self::$CACHE[$id];
+        return null;
     }
 
 }
