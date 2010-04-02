@@ -12,7 +12,7 @@ require_once('repose_FluidQuery.php');
 require_once('repose_Uuid.php');
 
 /**
- * Session
+ * Session TEST
  * @package repose
  */
 class repose_Session {

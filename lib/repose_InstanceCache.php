@@ -294,6 +294,15 @@ class repose_InstanceCache {
     }
 
     /**
+     * Find a proxy by its ID
+     * @param string $id Proxy ID
+     * @return repose_IProxy
+     */
+    public function findProxyById($id) {
+        return isset($this->proxies[$id]) ? $this->proxies[$id] : null;
+    }
+
+    /**
      * Register a relationship
      * @param repose_IProxy $referree Referree
      * @param repose_IProxy $referrer Referrer
@@ -313,6 +322,16 @@ class repose_InstanceCache {
         if ( ! isset($this->referrerMap[$referreeId][$referrerId]) ) {
             // Ensure the referrer map array for this referree exists.
             $this->referrerMap[$referreeId][$referrerId] = array();
+        }
+
+        // Check all of our referree's properties to see if any of them match
+        // the backref for the referrer. If they match, we should assert that
+        // the referrer is added to our referree's collection.
+        foreach ( $referree->___repose_getProperties() as $referreeProperty ) {
+            if ( $referreeProperty->backref() == $property->name() ) {
+                $collection = $referree->___repose_propertyGetter($referreeProperty->name());
+                $collection->___repose_assertAdded($referrer);
+            }
         }
 
         $this->referrerMap[$referreeId][$referrerId][$propertyName] = true;

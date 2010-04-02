@@ -24,7 +24,7 @@ class repose_ConfigurationSessionFactory {
 
     /**
      * Get the current session
-     * @return respose_Session
+     * @return repose_Session
      */
     public function currentSession() {
         return $this->currentSession;
@@ -32,7 +32,7 @@ class repose_ConfigurationSessionFactory {
 
     /**
      * Opens a new session
-     * @return respose_Session
+     * @return repose_Session
      */
     public function openSession() {
         return new repose_Session(

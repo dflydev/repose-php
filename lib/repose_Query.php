@@ -84,7 +84,9 @@ class repose_Query {
 
         foreach ( $config->mappedClassProperties() as $property ) {
 
-            if ( $property->isObject() ) {
+            if ( $property->isCollection() ) {
+                // noop
+            } elseif ( $property->isObject() ) {
                 $objectPath = implode('.', array($path, $property->name()));
                 $relatedFrom = $this->processFrom($property->className(), $objectPath);
                 $this->processFromForSelect($relatedFrom, $objectPath);

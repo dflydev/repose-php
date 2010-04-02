@@ -82,6 +82,13 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
      * @return array
      */
     public function query(repose_Session $session, $queryString, $params = null) {
+        if ( ! is_null($params) ) {
+            foreach ( $params as $idx => $value ) {
+                if ( $value !== null and $value instanceof repose_IProxy ) {
+                    $params[$idx] = $value->___repose_primaryKeyValue();
+                }
+            }
+        }
         return $this->sqlSelect($queryString, $params);
     }
 

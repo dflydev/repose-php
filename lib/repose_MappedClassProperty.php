@@ -59,6 +59,18 @@ class repose_MappedClassProperty {
     protected $foreignKey;
 
     /**
+     * Backref
+     * @var string
+     */
+    protected $backref;
+
+    /**
+     * Cascade
+     * @var string
+     */
+    protected $cascade;
+
+    /**
      * Constructor
      * @param string $name Name
      * @param array $config Configuration
@@ -99,6 +111,8 @@ class repose_MappedClassProperty {
             $this->columnName = $config['columnName'];
         }
         $this->foreignKey = isset($config['foreignKey']) ? $config['foreignKey'] : null;
+        $this->backref = isset($config['backref']) ? $config['backref'] : null;
+        $this->cascade = isset($config['cascade']) ? $config['cascade'] : 'none';
     }
 
     /**
@@ -189,6 +203,30 @@ class repose_MappedClassProperty {
             }
         }
         return $this->$type;
+    }
+
+    /**
+     * Backref
+     * @return string
+     */
+    public function backref() {
+        return $this->backref;
+    }
+
+    /**
+     * Cascade
+     * @return string
+     */
+    public function cascade() {
+        return $this->cascade;
+    }
+
+    /**
+     * Cascade delete orphans?
+     * @return bool
+     */
+    public function cascadeDeleteOrphan() {
+        return preg_match('/delete-orphan/', $this->cascade());
     }
 
 }

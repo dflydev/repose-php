@@ -29,6 +29,12 @@ class sample_Project {
     public $manager;
 
     /**
+     * Bugs
+     * @var sample_Bug[]
+     */
+    public $bugs;
+
+    /**
      * Constructor
      * @param string $name Name
      * @param sample_User $manager Manager
