@@ -179,12 +179,14 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             $name = $property->name();
             $value = isset($this->$name) ? $this->$name : null;
             if ( $property->isObject() ) {
-                if ( ! $value instanceof repose_IProxy ) {
-                    $this->$name = $value = $this->___repose_session()->add(
-                        $value
-                    );
+                if ( ! is_null($value) ) {
+                    if ( ! $value instanceof repose_IProxy ) {
+                        $this->$name = $value = $this->___repose_session()->add(
+                            $value
+                        );
+                    }
+                    $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
                 }
-                $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
             }
             if ( $property->isCollection() and ! $value instanceof repose_ICollection ) {
                 $this->$name = $value = new repose_ArrayCollection(
@@ -212,10 +214,12 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             $name = $property->name();
             $value = isset($data[$name]) ? $data[$name] : null;
             if ( $property->isObject() ) {
-                if ( ! $value instanceof repose_IProxy ) {
-                    $value = $this->___repose_session()->add($value);
+                if ( ! is_null($value) ) {
+                    if ( ! $value instanceof repose_IProxy ) {
+                        $value = $this->___repose_session()->add($value);
+                    }
+                    $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
                 }
-                $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
             }
             if ( $property->isCollection() and ! $value instanceof repose_ICollection ) {
                 $value = new repose_ArrayCollection(
