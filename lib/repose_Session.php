@@ -7,6 +7,8 @@
 require_once('repose_InstanceCache.php');
 require_once('repose_IEngine.php');
 require_once('repose_Mapping.php');
+require_once('repose_IAutoloader.php');
+require_once('repose_ClasspathAutoloader.php');
 require_once('repose_Query.php');
 require_once('repose_FluidQuery.php');
 require_once('repose_Uuid.php');
@@ -39,12 +41,14 @@ class repose_Session {
      * Constructor
      * @param repose_IEngine $engine Engine
      * @param repose_Mapping $mapping Mapping
-     * @param array $options Options
+     * @param repose_IAutoloader $autoloader Autoloader
      */
-    public function __construct(repose_IEngine $engine, repose_Mapping $mapping) {
+    public function __construct(repose_IEngine $engine, repose_Mapping $mapping, repose_IAutoloader $autoloader = null) {
         $this->id = repose_Uuid::v4();
         $this->engine = $engine;
         $this->mapping = $mapping;
+        $this->autoloader = isset($autoloader) ? $autoloader :
+            new repose_ClasspathAutoloader();
         $this->instanceCache = new repose_InstanceCache($this);
         self::$CACHE[$this->id] = $this;
     }
