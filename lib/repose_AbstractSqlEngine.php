@@ -99,9 +99,6 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
                 }
             }
         }
-        if ( $this->simplify ) {
-            list($queryString, $params) = $this->simplifySql($queryString, $params);
-        }
         return $this->sqlSelect($queryString, $params);
     }
 
