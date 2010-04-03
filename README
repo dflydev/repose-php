@@ -5,12 +5,3 @@ http://repose-php.org/
 
 Repose is an ORM tool for PHP. Similar to Hibernate and SQLAlchemy and inspired
 by Outlet, another ORM tool for PHP.
-
-Repose's goal is to provide developers with a tool to aid in persisting object
-data in a relational database. Reposes provides Unit of Work (UoW) and
-Object-Relational-Mapping (ORM) while attempting to remain as unobtrusive to
-the domain model as possible. Repose is still very early in its development,
-but so far the only restrictions on the domain model are that the classes are
-not marked final and properties are not marked private. Beyond that, there are
-no other restrictions on the classes and they may be more or less Plain Old
-PHP Objects (POPO).
