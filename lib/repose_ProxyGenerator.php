@@ -209,6 +209,8 @@ class repose_ProxyGenerator {
      */
     private function buildProxyClassCode($clazz) {
 
+        $this->session->autoloader()->loadClass($clazz);
+
         if ( self::$PROXY_TEMPLATE === null ) {
             self::$PROXY_TEMPLATE = preg_replace(
                 '/(^<\?php|\?>$)/',

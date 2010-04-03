@@ -307,6 +307,14 @@ class repose_Session {
     }
 
     /**
+     * Autoloader
+     * @return repose_IAutoloader
+     */
+    public function autoloader() {
+        return $this->autoloader;
+    }
+
+    /**
      * Destroy
      *
      * Properly cleans up all of the resources used by the session.
