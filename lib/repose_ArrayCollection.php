@@ -146,7 +146,7 @@ class repose_ArrayCollection implements repose_ICollection, ArrayAccess, Iterato
      * Prepare collection for processing
      */
     public function ___repose_prepare() {
-        if ( ! $this->___repose_isQueried ) {
+        if ( ! $this->___repose_isQueried and $this->___repose_proxy()->___repose_isPersisted() ) {
             $results = $this->___repose_session()->execute(
                 $this->___repose_queryString,
                 array('__rc_backref__' => $this->___repose_proxy())
@@ -160,7 +160,11 @@ class repose_ArrayCollection implements repose_ICollection, ArrayAccess, Iterato
     }
 
     public function offsetSet($offset,$value) {
-        $this->___repose_prepare();
+        // TODO Determine if we actually want to ping the database when
+        // we add new items.
+        // NOTE If we enable this, it will always ping the database when
+        // a relationship is registered via instance cache.
+        //$this->___repose_prepare();
         $value = $this->___repose_session()->add($value);
         if ($offset == "") {
             $this->___repose_container[] = $value;

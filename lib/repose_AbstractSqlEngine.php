@@ -99,6 +99,9 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
                 }
             }
         }
+        if ( $this->simplify ) {
+            list($queryString, $params) = $this->simplifySql($queryString, $params);
+        }
         return $this->sqlSelect($queryString, $params);
     }
 
@@ -202,7 +205,7 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
     protected function sqlSelect($selectQuery, $params = null) {
         $rows = array();
         if ( $this->simplify ) {
-            list($sql, $params) = $this->simplifySql($sql, $params);
+            list($selectQuery, $params) = $this->simplifySql($selectQuery, $params);
         } else {
             if ( ! is_array($params) ) $params = array();
         }
@@ -220,7 +223,7 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
         // should never happen
         if ( ! is_array($params) ) $params = array($params);
         $values = array();
-        while (preg_match('/:(\w+)/', $sql, $matches)) {
+        while (preg_match('/:([\w]+)\b/', $sql, $matches)) {
             $name = $matches[1];
             $values[] = isset($params[$name]) ? $params[$name] : null;
             $sql = preg_replace('/:' . $name . '/', '?', $sql);

@@ -11,7 +11,7 @@ require_once('repose_AbstractSqlEngine.php');
  * @package repose
  */
 class repose_PdoEngine extends repose_AbstractSqlEngine {
-
+protected $simplify = true;
     /**
      * Data source
      * @var PDO
@@ -32,7 +32,6 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
      * @param array $data Associative array
      */
     protected function doInsert($sql, array $params) {
-        print_r(array('sql' => $sql, 'params' => $params));
         $statement = $this->dataSource->prepare($sql);
         $statement->execute(is_null($params) ? array() : $params);
         return $this->dataSource->lastInsertId();
