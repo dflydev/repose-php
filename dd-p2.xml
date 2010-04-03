@@ -1,6 +1,6 @@
 <packages xmlns="http://dd-p2.dflydev.com/2010">
     <package>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <name>Repose PHP ORM</name>
         <url>http://repose-php.org/</url>
         <copyright>Copyright (c) 2009,2010 Dragonfly Development</copyright>
