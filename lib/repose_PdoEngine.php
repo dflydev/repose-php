@@ -28,75 +28,47 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
 
     /**
      * Insert data into a table
-     * @param string $tableName Table nane
+     * @param string $sql SQL
      * @param array $data Associative array
      */
-    protected function sqlInsert($tableName, $data) {
-        $columns = array();
-        $placeholders = array();
-        $values = array();
-        foreach ( $data as $columnName => $value ) {
-            $columns[] = $columnName;
-            $values[$columnName] = $value;
-            $placeholders[] = ':' . $columnName;
-        }
-        $sql = 'INSERT INTO ' . $tableName . ' (' . implode(',', $columns) . ') VALUES (' . implode(',', $placeholders) . ')';
+    protected function doInsert($sql, array $params) {
+        print_r(array('sql' => $sql, 'params' => $params));
         $statement = $this->dataSource->prepare($sql);
-        $statement->execute($values);
+        $statement->execute(is_null($params) ? array() : $params);
         return $this->dataSource->lastInsertId();
     }
 
     /**
      * Update data in a table
-     * @param string $tableName Table nane
-     * @param array $data Associative array with updated data
-     * @param array $where Associative array containing WHERE information
+     * @param string $sql SQL
+     * @param array $data Associative array
      */
-    protected function sqlUpdate($tableName, $data, $where) {
-        $sets = array();
-        $wheres = array();
-        $values = array();
-        foreach ( $data as $columnName => $value ) {
-            $sets[] = $columnName . ' = :' . $columnName;
-            $values[$columnName] = $value;
-        }
-        foreach ( $where as $columnName => $value ) {
-            $wheres[] = $columnName . ' = :where_' . $columnName;
-            $values['where_' . $columnName] = $value;
-        }
-        $sql = 'UPDATE ' . $tableName . ' SET ' . implode(', ', $sets) . ' WHERE ' . implode(' AND ', $wheres);
+    protected function doUpdate($sql, array $params) {
         $statement = $this->dataSource->prepare($sql);
-        $statement->execute($values);
+        $statement->execute(is_null($params) ? array() : $params);
     }
 
     /**
      * Delete data from a table
-     * @param string $tableName Table name
-     * @param array $where Associative array containing WHERE information
+     * @param string $sql SQL
+     * @param array $data Associative array
      */
-    protected function sqlDelete($tableName, $where) {
-        $wheres = array();
-        $values = array();
-        foreach ( $where as $columnName => $value ) {
-            $wheres[] = $columnName . ' = :where_' . $columnName;
-            $values['where_' . $columnName] = $value;
-        }
-        $sql = 'DELETE FROM ' . $tableName . ' WHERE ' . implode(' AND ', $wheres);
+    protected function doDelete($sql, array $params) {
         $statement = $this->dataSource->prepare($sql);
-        $statement->execute($values);
+        $statement->execute(is_null($params) ? array() : $params);
     }
 
     /**
      * Select data
-     * @param string $selectQuery Select query
-     * @param array $params Associative array with bind params
+     * @param string $sql SQL
+     * @param array $data Associative array
      * @return array
      */
-    protected function sqlSelect($selectQuery, $params = null) {
+    protected function doSelect($sql, array $params) {
         $rows = array();
         if ( ! is_array($params) ) $params = array();
-        $statement = $this->dataSource->prepare($selectQuery);
-        $statement->execute($params);
+        $statement = $this->dataSource->prepare($sql);
+        $statement->execute(is_null($params) ? array() : $params);
         foreach ( $statement->fetchAll(PDO::FETCH_ASSOC) as $row ) {
             $rows[] = $row;
         }
