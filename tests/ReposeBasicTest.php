@@ -137,6 +137,20 @@ class ReposeBasicTest extends AbstractReposeTest {
 
         $this->assertEquals('Existing Bug', $bug->project->bugs[0]->title);
 
+        $bug2 = $session->execute(
+            'FROM sample_Bug bug WHERE bug.bugId = :bugId',
+            array('bugId' => 521152)
+        )->one();
+
+        $this->assertEquals(521152, $bug2->bugId);
+
+        $bug3 = $session->execute(
+            'FROM sample_Bug WHERE bugId = :bugId',
+            array('bugId' => 521152)
+        )->one();
+
+        $this->assertEquals(521152, $bug3->bugId);
+
     }
 
     /**
