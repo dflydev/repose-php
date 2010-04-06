@@ -52,6 +52,7 @@ class repose_ProxyGenerator {
     public function makeProxy($clazz, $instance, $data = null, $isPersisted = false) {
         $proxy = null;
         $proxyClazz = null;
+        $reflectionProperties = $this->reflectionClassProperties($clazz);
         if ( $instance instanceof repose_IProxy ) {
             $proxy = $instance;
             $proxyClazz = get_class($proxy);
@@ -72,7 +73,6 @@ class repose_ProxyGenerator {
 
             //$proxy = $this->proxyReflectionClass($clazz)->newInstance();
 
-            $reflectionProperties = $this->reflectionClassProperties($clazz);
             $proxyReflectionProperties = $this->proxyReflectionClassProperties(
                 $clazz
             );
@@ -92,6 +92,7 @@ class repose_ProxyGenerator {
             $this->instanceCache,
             $proxyClazz,
             $clazz,
+            $reflectionProperties,
             $data,
             $isPersisted
         );
@@ -186,6 +187,9 @@ class repose_ProxyGenerator {
             $reflectionClassProperties = array();
             $proxyReflectionClassProperties = array();
             foreach ( $reflectionClass->getProperties() as $property ) {
+                if ( ! $property->isPublic() ) {
+                    $property->setAccessible(true);
+                }
                 $reflectionClassProperties[$property->getName()] = $property;
             }
             foreach ( $proxyReflectionClass->getProperties() as $property ) {

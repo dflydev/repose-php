@@ -45,6 +45,12 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     private $___repose_clazz;
 
     /**
+     * Reflection properties
+     * @var array
+     */
+    private $___repose_reflectionProperties;
+
+    /**
      * Proxy class name
      * @var string
      */
@@ -87,13 +93,15 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * @param repose_InstanceCache $instanceCache Instance cache
      * @param string $proxyClazz Proxy class
      * @param string $clazz Class
+     * @param array $reflectionproperties Reflection properties
      */
-    public function ___repose_init($session, $instanceCache, $proxyClazz, $clazz, $data = null, $isPersisted = false) {
+    public function ___repose_init($session, $instanceCache, $proxyClazz, $clazz, $reflectionProperties, $data = null, $isPersisted = false) {
         $this->___repose_id = repose_Uuid::v4();
         $this->___repose_sessionId = $session->id();
         $this->___repose_instanceCacheId = $instanceCache->id();
         $this->___repose_proxyClazz = $proxyClazz;
         $this->___repose_clazz = $clazz;
+        $this->___repose_reflectionProperties = $reflectionProperties;
         $this->___repose_isPersisted = $isPersisted;
         $this->___repose_populateInstanceFromData($data);
         $this->___repose_populateHistoryFromInstance();
@@ -177,25 +185,25 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_populateHistoryFromInstance() {
         foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
-            $value = isset($this->$name) ? $this->$name : null;
+            $value = $this->___repose_propertyGetter($name);
             if ( $property->isObject() ) {
                 if ( ! is_null($value) ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $this->$name = $value = $this->___repose_session()->add(
-                            $value
-                        );
+                        $value = $this->___repose_session()->add($value);
+                        $this->___repose_propertySetter($name, $value);
                     }
                     $this->___repose_instanceCache()->registerRelationship($value, $this, $property);
                 }
             }
             if ( $property->isCollection() and ! $value instanceof repose_ICollection ) {
-                $this->$name = $value = new repose_ArrayCollection(
+                $value = new repose_ArrayCollection(
                     $this->___repose_session(),
                     $this->___repose_instanceCache(),
                     $this,
                     $property,
                     $value
                 );
+                $this->___repose_propertySetter($name, $value);
             }
             if ( $property->isObject() and $value and $value instanceof repose_IProxy and $value->___repose_isDeleted() ) {
                 $this->___repose_history[$name] = null;
@@ -231,9 +239,9 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                 );
             }
             if ( $property->isObject() and $value and $value instanceof repose_IProxy and $value->___repose_isDeleted() ) {
-                $this->$name = null;
+                $this->___repose_propertySetter($name, null);
             } else {
-                $this->$name = $value;
+                $this->___repose_propertySetter($name, $value);
             }
         }
     }
@@ -248,7 +256,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             $name = $property->name();
             $value = isset($this->___repose_history[$name]) ?
                 $this->___repose_history[$name] : null;
-            $vTest = isset($this->$name) ? $this->$name : null;
+            $vTest = $this->___repose_propertyGetter($name);
             if ( $value !== $vTest ) return true;
         }
         return false;
@@ -261,7 +269,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         foreach ( $this->___repose_getProperties() as $property ) {
             if ( $property->isObject() ) {
                 $name = $property->name();
-                $value = $this->$name;
+                $value = $this->___repose_propertyGetter($name);
                 if ( $value !== null ) {
                     if ( ! $value instanceof repose_IProxy ) {
                         $value = $this->___repose_session()->add($value);
@@ -317,7 +325,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             if ( ! $primaryKey->isComposite() ) {
                 $primaryKeyProperty = $primaryKey->property();
                 $name = $primaryKeyProperty->name();
-                $this->$name = $newId;
+                $this->___repose_propertySetter($name, $newId);
             }
 
             // And now we know...
@@ -385,11 +393,12 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         $data = array();
         foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
-            if ( isset($this->$name) ) {
+            $value = $this->___repose_propertyGetter($name);
+            if ( isset($value) ) {
                 if ( ! $property->isCollection() ) {
                     $data[$name] = $this->derivePropertyValue(
                         $property,
-                        $this->$name
+                        $value
                     );
                 }
             }
@@ -406,10 +415,11 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         foreach ( $this->___repose_getProperties() as $property ) {
             $name = $property->name();
             if ( ! $property->isCollection() ) {
-                if ( ! isset($this->___repose_history[$name]) or $this->$name != $this->___repose_history[$name] ) {
+                $value = $this->___repose_propertyGetter($name);
+                if ( ! isset($this->___repose_history[$name]) or $value != $this->___repose_history[$name] ) {
                     $data[$name] = $this->derivePropertyValue(
                         $property,
-                        $this->$name
+                        $value
                     );
                 }
             }
@@ -428,7 +438,8 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             $name = $property->name();
             switch($which) {
                 case 'current':
-                    if ( isset($this->$name) ) $data[$name] = $this->$name;
+                    $value = $this->___repose_propertyGetter($name);
+                    if ( isset($value) ) $data[$name] = $value;
                     break;
                 case 'history':
                     if ( isset($this->___repose_history[$name]) ) {
@@ -483,7 +494,9 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * @return mixed
      */
     public function ___repose_propertyGetter($name) {
-        return $this->$name;
+        $reflectionProperty = $this->___repose_reflectionProperties[$name];
+        return $reflectionProperty->getValue($this);
+        //return $this->$name;
     }
 
     /**
@@ -492,7 +505,9 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * @param mixed $value Value
      */
     public function ___repose_propertySetter($name, $value = null) {
-        $this->$name = $value;
+        $reflectionProperty = $this->___repose_reflectionProperties[$name];
+        return $reflectionProperty->setValue($this, $value);
+        //$this->$name = $value;
     }
 
     /**
