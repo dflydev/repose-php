@@ -151,6 +151,9 @@ class ReposeBasicTest extends AbstractReposeTest {
 
         $this->assertEquals(521152, $bug3->bugId);
 
+        $bug4 = $session->find('sample_Bug')->filterBy('bugId', 521152)->one();
+        $this->assertEquals(521152, $bug4->bugId);
+
     }
 
     /**
