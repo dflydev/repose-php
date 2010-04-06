@@ -264,7 +264,8 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                 $value = $this->$name;
                 if ( $value !== null ) {
                     if ( ! $value instanceof repose_IProxy ) {
-                        $this->name = $value = $this->___repose_session()->add($value);
+                        $value = $this->___repose_session()->add($value);
+                        $this->___repose_propertySetter($name, $value);
                     }
                     if ( ! $value->___repose_isPersisted() ) {
                         $value->___repose_persist();
