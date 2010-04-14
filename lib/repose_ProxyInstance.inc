@@ -93,7 +93,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * @param repose_InstanceCache $instanceCache Instance cache
      * @param string $proxyClazz Proxy class
      * @param string $clazz Class
-     * @param array $reflectionproperties Reflection properties
+     * @param array $reflectionProperties Reflection properties
      */
     public function ___repose_init($session, $instanceCache, $proxyClazz, $clazz, $reflectionProperties, $data = null, $isPersisted = false) {
         $this->___repose_id = repose_Uuid::v4();
@@ -496,7 +496,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_propertyGetter($name) {
         $reflectionProperty = $this->___repose_reflectionProperties[$name];
         return $reflectionProperty->getValue($this);
-        //return $this->$name;
     }
 
     /**
@@ -507,7 +506,6 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_propertySetter($name, $value = null) {
         $reflectionProperty = $this->___repose_reflectionProperties[$name];
         return $reflectionProperty->setValue($this, $value);
-        //$this->$name = $value;
     }
 
     /**

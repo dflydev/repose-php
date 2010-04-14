@@ -71,20 +71,9 @@ class repose_ProxyGenerator {
             $serializedParts[2] = '"' . $proxyClazz . '"';
             $proxy = unserialize(implode(':', $serializedParts));
 
-            //$proxy = $this->proxyReflectionClass($clazz)->newInstance();
-
             $proxyReflectionProperties = $this->proxyReflectionClassProperties(
                 $clazz
             );
-
-            foreach ( $reflectionProperties as $name => $reflectionProperty ) {
-                $originalValue = $reflectionProperty->getValue($instance);
-                $proxyReflectionproperty = $this->reflectionClassProperty(
-                    $clazz,
-                    $name
-                );
-                $proxyReflectionproperty->setValue($proxy, $originalValue);
-            }
 
         }
         $proxy->___repose_init(
@@ -186,19 +175,29 @@ class repose_ProxyGenerator {
             $proxyReflectionClass = new ReflectionClass($proxyClazz);
             $reflectionClassProperties = array();
             $proxyReflectionClassProperties = array();
-            foreach ( $reflectionClass->getProperties() as $property ) {
-                if ( ! $property->isPublic() ) {
-                    $property->setAccessible(true);
+            foreach ( $this->session->getProperties($clazz) as $property ) {
+                try {
+                    $reflectionProperty = $reflectionClass->getProperty(
+                        $property->name()
+                    );
+                    if ( ! $reflectionProperty->isPublic() ) {
+                        if ( method_exists($reflectionProperty, 'setAccessible') ) {
+                            $reflectionProperty->setAccessible(true);
+                        } else {
+                           throw new Exception('Fatal error mapping Repose proxy class. Is property "' . $property->name() . '" defined in class "' . $clazz . '" marked as private or protected? Repose only supports private and protected properties for PHP version 5.3 or newer.');
+                        }
+                    }
+                    $reflectionClassProperties[$property->name()] = $reflectionProperty;
+                } catch (ReflectionException $e) {
+                    throw new Exception('Fatal error mapping Repose proxy class. Is property named "' . $property->name() . '" defined in class "' . $clazz . '"?');
                 }
-                $reflectionClassProperties[$property->getName()] = $property;
-            }
-            foreach ( $proxyReflectionClass->getProperties() as $property ) {
-                $proxyReflectionClassProperties[$property->getName()] = $property;
             }
             self::$PROXIES_LOADED[$clazz] = array(
                 'reflectionClass' => $reflectionClass,
                 'reflectionClassProperties' => $reflectionClassProperties,
                 'proxyReflectionClass' => $proxyReflectionClass,
+                // TODO We do not actually do anything with the proxy reflection
+                // class properties. Should we even keep these around?
                 'proxyReflectionClassProperties' => $proxyReflectionClassProperties,
                 'proxyClazz' => $proxyClazz,
             );
