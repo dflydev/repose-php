@@ -223,7 +223,7 @@ abstract class repose_AbstractSqlEngine implements repose_IEngine {
         while (preg_match('/:([\w]+)\b/', $sql, $matches)) {
             $name = $matches[1];
             $values[] = isset($params[$name]) ? $params[$name] : null;
-            $sql = preg_replace('/:' . $name . '/', '?', $sql);
+            $sql = preg_replace('/:' . $name . '([,)]|$)/', '?$1', $sql);
         }
         return array($sql, $values);
     }
