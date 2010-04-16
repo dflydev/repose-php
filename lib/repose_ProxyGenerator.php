@@ -71,10 +71,18 @@ class repose_ProxyGenerator {
             $serializedParts[2] = '"' . $proxyClazz . '"';
             $proxy = unserialize(implode(':', $serializedParts));
 
-            $proxyReflectionProperties = $this->proxyReflectionClassProperties(
-                $clazz
-            );
-
+            // TODO Without this in place, Reflection was throwing
+            // a strange exception. Adding this code back in seems
+            // to resolve the issue.
+            foreach ( $reflectionProperties as $name => $reflectionProperty ) {
+                $originalValue = $reflectionProperty->getValue($instance);
+                $proxyReflectionProperty = $this->reflectionClassProperty(
+                    $clazz,
+                    $name
+                );
+                $proxyReflectionProperty->setValue($proxy, $originalValue);
+            }
+            
         }
         $proxy->___repose_init(
             $this->session,
