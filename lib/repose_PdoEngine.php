@@ -11,7 +11,7 @@ require_once('repose_AbstractSqlEngine.php');
  * @package repose
  */
 class repose_PdoEngine extends repose_AbstractSqlEngine {
-protected $simplify = true;
+
     /**
      * Data source
      * @var PDO
