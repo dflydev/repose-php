@@ -91,21 +91,6 @@ class repose_ArrayCollection implements repose_ICollection, ArrayAccess, Iterato
 
     }
 
-    public function ___test() {
-        print " [ testing! ]\n";
-        print_r($this->___repose_proxy()->___repose_primaryKeyData());
-        print " [ mor testin g]\n";
-        $results = $this->___repose_session()->execute(
-            $this->___repose_queryString,
-            array('__rc_backref__' => $this->___repose_proxy())
-        );
-        print_r($results);
-        print " [ done testing ]\n";
-        foreach ( $results->all() as $row ) {
-            print $row->title . "\n";
-        }
-    }
-
     /**
      * Get the session
      * @return repose_Session
