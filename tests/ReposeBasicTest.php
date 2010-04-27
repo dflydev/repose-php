@@ -153,7 +153,24 @@ class ReposeBasicTest extends AbstractReposeTest {
 
         $bug4 = $session->find('sample_Bug')->filterBy('bugId', 521152)->one();
         $this->assertEquals(521152, $bug4->bugId);
+        
+        // We want to add another user that sorts to the top so that we can
+        // be more certain that our order by and limit actions are working
+        // as we expect.
+        $session->add(new sample_User('000zero'));
+        $session->flush();
+        
+        $users = $session->find('sample_User')->orderBy('name')->all();
+        $this->assertEquals(5, count($users));
+        
+        //foreach ( $users as $user ) {
+        //    print $user->name . "\n";
+        //}
 
+        $users = $session->find('sample_User')->orderBy('name')->limit(1)->offset(3)->all();
+        $this->assertEquals(1, count($users));
+        $this->assertEquals('firstUser', $users[0]->name);
+        
     }
 
     /**

@@ -39,6 +39,12 @@ class repose_Query {
     private $tableAliasCounter = 0;
 
     private $columnAliasCounter = 0;
+    
+    private $orderBy = null;
+    
+    private $limit = null;
+    
+    private $offset = null;
 
     private $sql = null;
 
@@ -111,17 +117,17 @@ class repose_Query {
         }
     }
     protected function parseQueryString($queryString) {
-        if ( preg_match("/from\s+(.+?)\s*(join|where|group\s+by|limit|$)/is", $queryString, $fromMatches) ) {
+        if ( preg_match("/from\s+(.+?)\s*(join|where|order\s+by|group\s+by|having|limit|$)/is", $queryString, $fromMatches) ) {
             foreach ( preg_split('/\s*,\s*/', $fromMatches[1]) as $fromPart ) {
                 $this->processFrom($fromPart);
             }
         }
-        if ( preg_match("/(join\s+.+?)\s*(where|group\s+by|limit|$)/is", $queryString, $joinMatches) ) {
+        if ( preg_match("/(join\s+.+?)\s*(where|order\s+by|group\s+by|having|limit|$)/is", $queryString, $joinMatches) ) {
         }
         foreach ( $this->from as $from ) {
             $this->processFromForSelect($from);
         }
-        if ( preg_match("/where\s+(.+?)\s*(group\s+by|limit|$)/is", $queryString, $whereMatches) ) {
+        if ( preg_match("/where\s+(.+?)\s*(order\s+by|group\s+by|limit|having|$)/is", $queryString, $whereMatches) ) {
             $rawWhere = $whereMatches[1];
             if ( preg_match_all('/([\w\.\:]+)/', $rawWhere, $fields) ) {
                 foreach ( $fields[1] as $field ) {
@@ -145,9 +151,37 @@ class repose_Query {
             }
             $this->where = $rawWhere;
         }
-        if ( preg_match("/select\s+(.+?)\s*(from|join|where|group\s+by|limit|$)/is", $queryString, $selectMatches) ) {
+        if ( preg_match("/order\s+by\s+(.+?)\s*(group\s+by|limit|having|$)/is", $queryString, $orderByMatches) ) {
+            $rawOrderBy = $orderByMatches[1];
+            if ( preg_match_all('/([\w\.\:]+)/', $rawOrderBy, $fields) ) {
+                foreach ( $fields[1] as $field ) {
+                    if ( strpos($field, ':') === false ) {
+                        if ( preg_match('/^(.+)\.([^\.]+)$/s', $field, $fieldParts) ) {
+
+                            // Break out the matches.
+                            list($dummy, $object, $propertyName) = $fieldParts;
+
+                            $objectFrom = $this->fromPath[$object];
+                            $property = $this->session->getProperty(
+                                $objectFrom['className'],
+                                $propertyName
+                            );
+
+                            $rawOrderBy = preg_replace('/' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $rawOrderBy);
+
+                        }
+                    }
+                }
+            }
+            $this->orderBy = $rawOrderBy;
+        }
+        if ( preg_match("/select\s+(.+?)\s*(from|join|where|order\s+by|group\s+by|limit|having|$)/is", $queryString, $selectMatches) ) {
             $rawSelect = $selectMatches[1];
             $this->selectResults = preg_split('/\s*,\s*/', $rawSelect);
+        }
+        if ( preg_match("/\slimit\s+(\d+)(?:\s+offset\s+(\d+)|)$/is", $queryString, $limitMatches) ) {
+            if ( isset($limitMatches[1]) ) $this->limit = $limitMatches[1];
+            if ( isset($limitMatches[2]) ) $this->offset = $limitMatches[2];
         }
     }
     public function execute($values = null) {
@@ -295,6 +329,17 @@ class repose_Query {
 
         if ( $this->where ) {
             $sql .= ' WHERE ' . $this->where;
+        }
+        
+        if ( $this->orderBy !== null ) {
+            $sql .= ' ORDER BY ' . $this->orderBy;
+        }
+        
+        if ( $this->limit !== null ) {
+            $sql .= ' LIMIT ' . $this->limit;
+            if ( $this->offset !== null ) {
+                $sql .= ' OFFSET ' . $this->offset;
+            }
         }
 
         return $sql;

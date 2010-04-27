@@ -48,6 +48,36 @@ class repose_FluidQuery {
      * @var array
      */
     protected $where = array();
+    
+    /**
+     * Order by
+     * @var array
+     */
+    protected $orderBy = array();
+    
+    /**
+     * Group by
+     * @var array
+     */
+    protected $groupBy = array();
+    
+    /**
+     * Having
+     * @var array
+     */
+    protected $having = array();
+    
+    /**
+     * Limit
+     * @var int
+     */
+    protected $limit = null;
+    
+    /**
+     * Offset
+     * @var int
+     */
+    protected $offset = null;
 
     /**
      * Query Response
@@ -91,6 +121,52 @@ class repose_FluidQuery {
     }
 
     /**
+     * Group objects by
+     */
+    public function groupBy() {
+        $args = func_get_args();
+        foreach ( $args as $arg ) {
+            if ( ! is_array($arg) ) $arg = array($arg);
+            foreach ( $arg as $groupBy ) {
+                $this->groupBy[] = $groupBy;
+            }
+        }
+        return $this;
+    }
+    
+    /**
+     * Order objects by
+     */
+    public function orderBy() {
+        $args = func_get_args();
+        foreach ( $args as $arg ) {
+            if ( ! is_array($arg) ) $arg = array($arg);
+            foreach ( $arg as $orderBy ) {
+                $this->orderBy[] = $orderBy;
+            }
+        }
+        return $this;
+    }
+    
+    /**
+     * Limit
+     * @param string $limit Limit
+     */
+    public function limit($limit = null) {
+        $this->limit = $limit;
+        return $this;
+    }
+
+    /**
+     * Offset
+     * @param string $offset Offset
+     */
+    public function offset($offset = null) {
+        $this->offset = $offset;
+        return $this;
+    }
+
+    /**
      * Perform the query
      * @return repose_QueryResponse
      */
@@ -114,6 +190,21 @@ class repose_FluidQuery {
         $queryString = 'FROM ' . join(', ', $this->find);
         if ( ! empty($this->wheres) ) {
             $queryString .= ' WHERE ' . implode(' AND ', $this->wheres);
+        }
+        if ( count($this->groupBy) > 0 ) {
+            $queryString .= ' GROUP BY ' . implode(', ', $this->groupBy);
+        }
+        if ( count($this->having) > 0 ) {
+            $queryString .= ' HAVING ' . implode(', ', $this->having);
+        }
+        if ( count($this->orderBy) > 0 ) {
+            $queryString .= ' ORDER BY ' . implode(', ', $this->orderBy);
+        }
+        if ( $this->limit !== null ) {
+            $queryString .= ' LIMIT ' . $this->limit;
+            if ( $this->offset!== null ) {
+                $queryString .= ' OFFSET ' . $this->offset;
+            }
         }
         return $queryString;
     }
