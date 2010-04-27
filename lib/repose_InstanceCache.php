@@ -277,7 +277,7 @@ class repose_InstanceCache {
             }
             $this->flush($pass + 1);
         }
-        print ' [finished flush pass ' . $pass . ']' . "\n";
+        //print ' [finished flush pass ' . $pass . ']' . "\n";
     }
 
     /**
