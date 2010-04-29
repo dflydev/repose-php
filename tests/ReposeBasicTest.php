@@ -172,12 +172,61 @@ class ReposeBasicTest extends AbstractReposeTest {
         $this->assertEquals('firstUser', $users[0]->name);
         
     }
+    
+    /**
+     * Test identity of existing data
+     */
+    public function testExistingIdentity() {
 
+        $session = $this->getSampleProjectSession(true);
+
+        $bug = $session->find('sample_Bug')->filterBy('bugId', 521152)->one();
+        $project = $session->find('sample_Project')->filterBy('projectId', 12345)->one();
+        $user = $session->find('sample_User')->filterBy('userId', '55566')->one();
+
+        $this->assertTrue($bug->owner === $project->manager);
+        $this->assertTrue($user === $bug->owner);
+        $this->assertTrue($user === $project->manager);
+        
+    }
+
+    /**
+     * Test identity of existing data (cross session)
+     * 
+     * All of the identity tests should fail when crossing from one
+     * session into another. The same should be true between sessions
+     * of one session factory and another as well.
+     */
+    public function testExistingIdentityCrossSession() {
+
+        $sessionFactory = $this->getSampleProjectSessionFactory(true);
+        
+        $session1 = $sessionFactory->openSession();
+        $session2 = $sessionFactory->openSession();
+        $session3 = $sessionFactory->openSession();
+        
+        $bug = $session1->find('sample_Bug')->filterBy('bugId', 521152)->one();
+        $project = $session2->find('sample_Project')->filterBy('projectId', 12345)->one();
+        $user = $session3->find('sample_User')->filterBy('userId', '55566')->one();
+
+        $this->assertTrue($bug->owner !== $project->manager);
+        $this->assertTrue($user !== $bug->owner);
+        $this->assertTrue($user !== $project->manager);
+        
+        $sessionFactory2 = $this->getSampleProjectSessionFactory(false);
+        $sessionFactory3 = $this->getSampleProjectSessionFactory(false);
+        
+        $bug = $sessionFactory2->currentSession()->find('sample_Bug')->filterBy('bugId', 521152)->one();
+        $user = $sessionFactory3->currentSession()->find('sample_User')->filterBy('userId', '55566')->one();
+        $this->assertTrue($user !== $bug->owner);
+        
+    }
+    
     /**
      * Get a sample project session
      * @return repose_Session
      */
-    protected function getSampleProjectSession($initDb = false) {
+    protected function getSampleProjectSessionFactory($initDb = false) {
         
         $configuration = new repose_Configuration(array(
 
@@ -249,27 +298,35 @@ class ReposeBasicTest extends AbstractReposeTest {
 
             ),
         ));
-
-        $sessionFactory = new repose_ConfigurationSessionFactory($configuration);
-        $session = $sessionFactory->currentSession();
-
+        
         if ( $initDb ) {
+            $this->initDb($configuration);
+        }
 
-            $dataSource = $configuration->dataSource();
+        return new repose_ConfigurationSessionFactory($configuration);
+        
+    }
+    
+    /**
+     * Initialize the testing database
+     */
+    public function initDb($configuration) {
 
-            $dataSource->exec('DROP TABLE IF EXISTS user');
-            $dataSource->exec('DROP TABLE IF EXISTS project');
-            $dataSource->exec('DROP TABLE IF EXISTS projectInfo');
-            $dataSource->exec('DROP TABLE IF EXISTS bug');
+        $dataSource = $configuration->dataSource();
 
-            $dataSource->exec('
+        $dataSource->exec('DROP TABLE IF EXISTS user');
+        $dataSource->exec('DROP TABLE IF EXISTS project');
+        $dataSource->exec('DROP TABLE IF EXISTS projectInfo');
+        $dataSource->exec('DROP TABLE IF EXISTS bug');
+
+        $dataSource->exec('
 CREATE TABLE user (
 userId INTEGER PRIMARY KEY AUTOINCREMENT,
 name TEXT NOT NULL
         )
 ');
 
-            $dataSource->exec('
+        $dataSource->exec('
 CREATE TABLE project (
 projectId INTEGER PRIMARY KEY AUTOINCREMENT,
 name TEXT NOT NULL,
@@ -277,7 +334,7 @@ managerUserId INTEGER NOT NULL
 )
 ');
 
-            $dataSource->exec('
+        $dataSource->exec('
 CREATE TABLE projectInfo (
 projectInfoId INTEGER PRIMARY KEY AUTOINCREMENT,
 projectId INTEGER NOT NULL,
@@ -285,7 +342,7 @@ description TEXT NOT NULL
 )
 ');
 
-            $dataSource->exec('
+        $dataSource->exec('
 CREATE TABLE bug (
 bugId INTEGER PRIMARY KEY AUTOINCREMENT,
 title TEXT NOT NULL,
@@ -296,18 +353,26 @@ ownerUserId INTEGER
 )
 ');
 
-            $dataSource->exec('INSERT INTO user (userId, name) VALUES (100001, "firstUser")');
-            $dataSource->exec('INSERT INTO user (userId, name) VALUES (100002, "secondUser")');
+        $dataSource->exec('INSERT INTO user (userId, name) VALUES (100001, "firstUser")');
+        $dataSource->exec('INSERT INTO user (userId, name) VALUES (100002, "secondUser")');
 
-            $dataSource->exec('INSERT INTO user (userId, name) VALUES (55566, "existingManager")');
-            $dataSource->exec('INSERT INTO user (userId, name) VALUES (67387, "existingUser")');
+        $dataSource->exec('INSERT INTO user (userId, name) VALUES (55566, "existingManager")');
+        $dataSource->exec('INSERT INTO user (userId, name) VALUES (67387, "existingUser")');
 
-            $dataSource->exec('INSERT INTO project (projectId, name, managerUserId) VALUES (12345, "Existing Project", 55566)');
-            $dataSource->exec('INSERT INTO bug (bugId, title, body, projectId, reporterUserId, ownerUserId) VALUES (521152, "Existing Bug", "This bug existed from the time the database was created", 12345, 67387, 55566)');
+        $dataSource->exec('INSERT INTO project (projectId, name, managerUserId) VALUES (12345, "Existing Project", 55566)');
+        $dataSource->exec('INSERT INTO bug (bugId, title, body, projectId, reporterUserId, ownerUserId) VALUES (521152, "Existing Bug", "This bug existed from the time the database was created", 12345, 67387, 55566)');
 
-        }
+    }
+        
+    
+    /**
+     * Get a sample project session
+     * @return repose_Session
+     */
+    protected function getSampleProjectSession($initDb = false) {
 
-        return $session;
+        $sessionFactory = $this->getSampleProjectSessionFactory($initDb);
+        return $sessionFactory->currentSession();
 
     }
 
