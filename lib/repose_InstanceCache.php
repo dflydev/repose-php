@@ -267,8 +267,10 @@ class repose_InstanceCache {
         $flushedAtLeastOne = false;
         foreach ( $this->proxies as $id => $proxy ) {
             if ( $proxy->___repose_isDeleted() or ( ! $proxy->___repose_isPersisted() ) or $proxy->___repose_isDirty() ) {
-                $proxy->___repose_flush();
-                $flushedAtLeastOne = true;
+                if ( ! $proxy->___repose_isReallyDeleted() ) {
+                    $proxy->___repose_flush();
+                    $flushedAtLeastOne = true;
+                }
             }
         }
         if ( $flushedAtLeastOne ) {
