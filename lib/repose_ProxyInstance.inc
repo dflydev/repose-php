@@ -73,7 +73,13 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
      * @var bool
      */
     private $___repose_isDeleted;
-
+    
+    /**
+     * Is really deleted?
+     * @var bool
+     */
+    private $___repose_isReallyDeleted;
+    
     /**
      * Are we flushing?
      * @var bool
@@ -106,6 +112,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         $this->___repose_populateInstanceFromData($data);
         $this->___repose_populateHistoryFromInstance();
         $this->___repose_isDeleted = false;
+        $this->___repose_isReallyDeleted = false;
     }
 
     /**
@@ -147,7 +154,15 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
     public function ___repose_isDeleted() {
         return $this->___repose_isDeleted;
     }
-
+    
+    /**
+     * Is really deleted?
+     * @return bool
+     */
+    public function ___repose_isReallyDeleted() {
+        return $this->___repose_isReallyDeleted;
+    }
+    
     /**
      * A mapped class
      * @param string $clazz Class
@@ -309,6 +324,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                 $newId = $this->___repose_session()->engine()->delete($this->___repose_session(), $this);
                 $this->___repose_isPersisted = false;
             }
+            $this->___repose_isReallyDeleted = true;
         } elseif ( ! $this->___repose_isPersisted ) {
 
             //
