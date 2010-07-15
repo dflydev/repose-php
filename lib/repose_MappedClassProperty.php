@@ -76,6 +76,9 @@ class repose_MappedClassProperty {
      * @param array $config Configuration
      */
     public function __construct($name, $config = array()) {
+        if ( $config and ! is_array($config) ) {
+            $config = array('columnName'=>$config);
+        }
         $this->name = $name;
         $this->type = isset($config['relationship']) ?
             $config['relationship'] : 'property';
