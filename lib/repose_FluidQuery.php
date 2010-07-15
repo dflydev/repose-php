@@ -119,6 +119,27 @@ class repose_FluidQuery {
         }
         return $this;
     }
+    
+    public function filterIn() {
+        $args = func_get_args();
+        $filters = array();
+        $k = array_shift($args);
+        $v = array();
+        foreach ( $args as $arg ) {
+            if ( is_array($arg) ) {
+                foreach ( $arg as $a ) $v[] = $a;
+            } else {
+                $v[] = $arg;
+            }
+        }
+        foreach ( $v as $value ) {
+            $placeholder = $this->generatePlaceholder();
+            $placeholders[] = ':' . $placeholder;
+            $this->values[$placeholder] = $value;
+        }
+        $this->wheres[] = $k . ' IN (' . implode(', ', $placeholders) . ')';
+        return $this;
+    }
 
     /**
      * Group objects by

@@ -207,12 +207,13 @@ class repose_MappedClassProperty {
 
     /**
      * Backref
+     * @param repose_Mapping $mapping Mapping
      * @return string
      */
-    public function backref() {
-        return $this->backref;
+    public function backref(repose_Mapping $mapping = null) {
+        return $this->deriveColumnName($mapping, 'backref');
     }
-
+    
     /**
      * Cascade
      * @return string

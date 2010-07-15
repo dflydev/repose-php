@@ -339,7 +339,7 @@ class repose_InstanceCache {
         // the backref for the referrer. If they match, we should assert that
         // the referrer is added to our referree's collection.
         foreach ( $referree->___repose_getProperties() as $referreeProperty ) {
-            if ( $referreeProperty->backref() == $property->name() ) {
+            if ( $referreeProperty->backref($this->session->mapping()) == $property->name() ) {
                 $collection = $referree->___repose_propertyGetter($referreeProperty->name());
                 $collection->___repose_assertAdded($referrer);
             }

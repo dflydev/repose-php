@@ -81,7 +81,7 @@ class repose_ArrayCollection implements repose_ICollection, ArrayAccess, Iterato
 
         $this->___repose_queryString =
             'FROM ' . $property->className() .  ' __rc__ ' .
-            'WHERE __rc__.' . $property->backref() . ' = :__rc_backref__';
+            'WHERE __rc__.' . $property->backref($session->mapping()) . ' = :__rc_backref__';
 
         if ( ! is_null($data) and is_array($data) ) {
             foreach ( $data as $item ) {
@@ -172,7 +172,7 @@ class repose_ArrayCollection implements repose_ICollection, ArrayAccess, Iterato
                 $this->___repose_session()->delete($value);
             } else {
                 $value->___repose_propertySetter(
-                    $this->___repose_property->backref(),
+                    $this->___repose_property->backref($this->___repose_session()->mapping()),
                     null
                 );
             }
