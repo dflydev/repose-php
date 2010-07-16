@@ -197,6 +197,10 @@ class repose_QueryParser {
         foreach ( preg_split('/\s*,\s*/', $from) as $fromPart ) {
             $this->parseFrom($fromPart);
         }
+
+        if ( $select ) {
+            $this->selectResults = preg_split('/\s*,\s*/', $select);
+        }
         
         $this->where = $this->rewriteObjectReferences($where);
         $this->orderBy = $this->rewriteObjectReferences($orderBy);

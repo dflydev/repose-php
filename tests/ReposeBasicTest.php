@@ -190,6 +190,17 @@ class ReposeBasicTest extends AbstractReposeTest {
         $favoriteProject = $manager->favoriteProject;
         $this->assertEquals(35570, $favoriteProject->projectId);
     }
+    
+    /**
+     * Test selecting a related object
+     */
+    public function testSelectRelatedObject() {
+        $session = $this->getSampleProjectSession(true);
+        $manager = $session->query(
+            'SELECT project.manager FROM sample_Project project WHERE project.projectId = :projectId'
+        )->execute(array('projectId' => '35569',))->one();
+        $this->assertEquals(99990, $manager->userId);
+    }
 
     /**
      * Test identity of existing data
