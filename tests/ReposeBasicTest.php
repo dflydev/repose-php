@@ -160,10 +160,10 @@ class ReposeBasicTest extends AbstractReposeTest {
         $session->add(new sample_User('000zero'));
         $session->flush();
         
-        $users = $session->find('sample_User user')->orderBy('user.name')->all();
+        $users = $session->find('sample_User')->orderBy('name')->all();
         $this->assertEquals(6, count($users));
 
-        $users = $session->find('sample_User user')->orderBy('user.name')->limit(1)->offset(4)->all();
+        $users = $session->find('sample_User')->orderBy('name')->limit(1)->offset(4)->all();
         $this->assertEquals(1, count($users));
         $this->assertEquals('firstUser', $users[0]->name);
         
@@ -180,6 +180,17 @@ class ReposeBasicTest extends AbstractReposeTest {
         $this->assertEquals(35570, $favoriteProject->projectId);
     }
     
+    /**
+     * Test getting a project managed by a user who favorites another project
+     */
+    public function testRootLevelObjectReference() {
+        $session = $this->getSampleProjectSession(true);
+        $project = $session->find('sample_Project')->filterBy('manager', 99990)->one();
+        $manager = $project->manager;
+        $favoriteProject = $manager->favoriteProject;
+        $this->assertEquals(35570, $favoriteProject->projectId);
+    }
+
     /**
      * Test identity of existing data
      */

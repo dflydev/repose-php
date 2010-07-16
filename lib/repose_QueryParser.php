@@ -51,10 +51,10 @@ class repose_QueryParser {
     private $isPrepared = false;
     
     /**
-     * Root unnamed object alias
+     * Root object alias
      * @var string
      */
-    //private $rootObjectAlias = '__rqp__root__';
+    private $rootObjectAlias = null;
     
     /**
      * Has the root unamed object alias been used?
@@ -143,6 +143,42 @@ class repose_QueryParser {
         $this->rawQueryString = $queryString;
     }
     
+    public function rewriteObjectReferences($input) {
+        
+        if ( preg_match_all('/([\w\.\:]+)/', $input, $fields) ) {
+            foreach ( $fields[1] as $field ) {
+                if ( strpos($field, ':') === false ) {
+                    if ( strpos($field, '.') === false ) {
+                        $objectFrom = $this->fromPath[$this->rootObjectAlias];
+                        if ( $this->session->hasProperty($objectFrom['className'],$field) ) {
+                            $property = $this->session->getProperty(
+                                $objectFrom['className'],
+                                $field
+                            );
+                            $input = preg_replace('/(^|[^:])' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $input);
+                            continue;
+                        }   
+                    }               
+                    if ( preg_match('/^(.+)\.([^\.]+)$/s', $field, $fieldParts) ) {
+                        
+                        // Break out the matches.
+                        list($dummy, $object, $propertyName) = $fieldParts;
+
+                        $objectFrom = $this->fromPath[$object];
+                        $property = $this->session->getProperty(
+                            $objectFrom['className'],
+                            $propertyName
+                        );
+
+                        $input = preg_replace('/(^|[^:])' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $input);
+
+                    }
+                }
+            }
+        }
+        return $input;
+    }
+    
     /**
      * Execute the query parser
      */
@@ -162,50 +198,8 @@ class repose_QueryParser {
             $this->parseFrom($fromPart);
         }
         
-        if ( preg_match_all('/([\w\.\:]+)/', $where, $fields) ) {
-            foreach ( $fields[1] as $field ) {
-                if ( strpos($field, ':') === false ) {
-                    if ( preg_match('/^(.+)\.([^\.]+)$/s', $field, $fieldParts) ) {
-
-                        // Break out the matches.
-                        list($dummy, $object, $propertyName) = $fieldParts;
-
-                        $objectFrom = $this->fromPath[$object];
-                        $property = $this->session->getProperty(
-                            $objectFrom['className'],
-                            $propertyName
-                        );
-
-                        $where = preg_replace('/' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $where);
-
-                    }
-                }
-            }
-        }
-        
-        $this->where = $where;
-        
-        if ( preg_match_all('/([\w\.\:]+)/', $orderBy, $fields) ) {
-            foreach ( $fields[1] as $field ) {
-                if ( strpos($field, ':') === false ) {
-                    if ( preg_match('/^(.+)\.([^\.]+)$/s', $field, $fieldParts) ) {
-
-                        // Break out the matches.
-                        list($dummy, $object, $propertyName) = $fieldParts;
-
-                        $objectFrom = $this->fromPath[$object];
-                        $property = $this->session->getProperty(
-                            $objectFrom['className'],
-                            $propertyName
-                        );
-
-                        $orderBy = preg_replace('/' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $orderBy);
-
-                    }
-                }
-            }
-        }
-        $this->orderBy = $orderBy;;
+        $this->where = $this->rewriteObjectReferences($where);
+        $this->orderBy = $this->rewriteObjectReferences($orderBy);
         
         $this->limit = $limit;
         $this->offset = $offset;
@@ -497,6 +491,11 @@ class repose_QueryParser {
     protected function parseSelect($from, $base = null) {
         $config = $this->session->getMappedClass($from['className']);
         $path = $base === null ?  $from['alias'] : $base;
+            
+        if ( $this->rootObjectAlias === null ) {
+            $this->rootObjectAlias = $path;
+        }
+
         foreach ( $config->mappedClassProperties() as $property ) {
             if ( $property->isCollection() ) {
                 // TODO Is this where we can handle non-lazy loading

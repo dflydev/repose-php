@@ -188,6 +188,16 @@ class repose_Session {
      */
     public function refresh($instance) {
     }
+    
+    /**
+     * Has a property for the specified class
+     * @param string $clazz Class name
+     * @param string $name Property name
+     * @return bool
+     */
+    public function hasProperty($clazz, $name) {
+        return in_array($name, $this->getPropertyNames($clazz));
+    }
 
     /**
      * Get a property for the specified class
