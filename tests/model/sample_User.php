@@ -21,6 +21,12 @@ class sample_User {
      * @var string
      */
     public $name;
+    
+    /**
+     * Favorite project
+     * @var unknown_type
+     */
+    public $favoriteProject;
 
     /**
      * Constructor

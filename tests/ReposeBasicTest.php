@@ -160,17 +160,24 @@ class ReposeBasicTest extends AbstractReposeTest {
         $session->add(new sample_User('000zero'));
         $session->flush();
         
-        $users = $session->find('sample_User')->orderBy('name')->all();
-        $this->assertEquals(5, count($users));
-        
-        //foreach ( $users as $user ) {
-        //    print $user->name . "\n";
-        //}
+        $users = $session->find('sample_User user')->orderBy('user.name')->all();
+        $this->assertEquals(6, count($users));
 
-        $users = $session->find('sample_User')->orderBy('name')->limit(1)->offset(3)->all();
+        $users = $session->find('sample_User user')->orderBy('user.name')->limit(1)->offset(4)->all();
         $this->assertEquals(1, count($users));
         $this->assertEquals('firstUser', $users[0]->name);
         
+    }
+    
+    /**
+     * Test getting a project managed by a user who favorites another project
+     */
+    public function testCircularReference() {
+        $session = $this->getSampleProjectSession(true);
+        $project = $session->find('sample_Project')->filterBy('projectId', 35569)->one();
+        $manager = $project->manager;
+        $favoriteProject = $manager->favoriteProject;
+        $this->assertEquals(35570, $favoriteProject->projectId);
     }
     
     /**
@@ -293,6 +300,11 @@ class ReposeBasicTest extends AbstractReposeTest {
                     'properties' => array(
                         'userId' => array( 'primaryKey' => 'true', ),
                         'name' => null,
+                        'favoriteProject' => array(
+                            'relationship' => 'many-to-one',
+                            'className' => 'sample_Project',
+                            'columnName' => 'favoriteProjectId'
+                        ),
                     ),
                 ),
 
@@ -322,7 +334,8 @@ class ReposeBasicTest extends AbstractReposeTest {
         $dataSource->exec('
 CREATE TABLE user (
 userId INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT NOT NULL
+name TEXT NOT NULL,
+favoriteProjectId INTEGER
         )
 ');
 
@@ -361,7 +374,12 @@ ownerUserId INTEGER
 
         $dataSource->exec('INSERT INTO project (projectId, name, managerUserId) VALUES (12345, "Existing Project", 55566)');
         $dataSource->exec('INSERT INTO bug (bugId, title, body, projectId, reporterUserId, ownerUserId) VALUES (521152, "Existing Bug", "This bug existed from the time the database was created", 12345, 67387, 55566)');
-
+        
+        $dataSource->exec('INSERT INTO user (userId, name, favoriteProjectId) VALUES (99990, "circleUser", 35570)');
+        
+        $dataSource->exec('INSERT INTO project (projectId, name, managerUserId) VALUES (35569, "Circle Test", 99990)');
+        $dataSource->exec('INSERT INTO project (projectId, name, managerUserId) VALUES (35570, "Circle Test (leaf)", 55566)');
+        
     }
         
     

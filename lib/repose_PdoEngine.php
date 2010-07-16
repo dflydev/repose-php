@@ -66,10 +66,16 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
     protected function doSelect($sql, array $params) {
         $rows = array();
         if ( ! is_array($params) ) $params = array();
-        $statement = $this->dataSource->prepare($sql);
-        $statement->execute(is_null($params) ? array() : $params);
-        foreach ( $statement->fetchAll(PDO::FETCH_ASSOC) as $row ) {
-            $rows[] = $row;
+        try {
+            $statement = $this->dataSource->prepare($sql);
+            $statement->execute(is_null($params) ? array() : $params);
+            foreach ( $statement->fetchAll(PDO::FETCH_ASSOC) as $row ) {
+                $rows[] = $row;
+            }
+        } catch (Exception $e) {
+            print $sql . "\n\n";
+            print_r($params);
+            print $e->getMessage();
         }
         return $rows;
     }
