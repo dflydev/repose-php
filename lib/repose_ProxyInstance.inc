@@ -291,7 +291,7 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
                         $this->___repose_propertySetter($name, $value);
                     }
                     if ( ! $value->___repose_isPersisted() ) {
-                        $value->___repose_persist();
+                        //$value->___repose_persist();
                     } elseif ( $value->___repose_isDirty() ) {
                         $value->___repose_flush();
                     }

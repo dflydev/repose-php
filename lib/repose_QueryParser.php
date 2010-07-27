@@ -144,18 +144,20 @@ class repose_QueryParser {
     }
     
     public function rewriteObjectReferences($input) {
-        
+        $alreadyFound = array();
         if ( preg_match_all('/([\w\.\:]+)/', $input, $fields) ) {
             foreach ( $fields[1] as $field ) {
                 if ( strpos($field, ':') === false ) {
                     if ( strpos($field, '.') === false ) {
+                        if ( isset($alreadyFound[$field]) ) continue;
                         $objectFrom = $this->fromPath[$this->rootObjectAlias];
                         if ( $this->session->hasProperty($objectFrom['className'],$field) ) {
                             $property = $this->session->getProperty(
                                 $objectFrom['className'],
                                 $field
                             );
-                            $input = preg_replace('/(^|[^:])' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $input);
+                            $input = preg_replace('/(^|[^:])' . $field . '/s', '$1' . $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $input);
+                            $alreadyFound[$field] = true;
                             continue;
                         }   
                     }               
@@ -169,9 +171,9 @@ class repose_QueryParser {
                             $objectFrom['className'],
                             $propertyName
                         );
-
-                        $input = preg_replace('/(^|[^:])' . $field . '/s', $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $input);
-
+                        
+                        $input = preg_replace('/(^|[^:])' . $field . '/s', '$1' . $objectFrom['actualAlias'] . '.' . $property->columnName($this->mapping), $input);
+                        
                     }
                 }
             }
@@ -204,7 +206,6 @@ class repose_QueryParser {
         
         $this->where = $this->rewriteObjectReferences($where);
         $this->orderBy = $this->rewriteObjectReferences($orderBy);
-        
         $this->limit = $limit;
         $this->offset = $offset;
         

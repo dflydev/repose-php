@@ -96,12 +96,8 @@ class repose_FluidQuery {
         $this->queryResponse = null;
         $this->find[] = $find;
     }
-
-    /**
-     * Filter objects by
-     */
-    public function filterBy() {
-        $args = func_get_args();
+    
+    protected function internalFilterBy($args, $operator) {
         $filters = array();
         if ( count($args) % 2 == 0 ) {
             while ( count($args) ) {
@@ -114,22 +110,74 @@ class repose_FluidQuery {
         }
         foreach ( $filters as $k => $v ) {
             $placeholder = $this->generatePlaceholder();
-            $this->wheres[] = $k . ' = :' . $placeholder;
+            $this->wheres[] = $k . ' ' . $operator . ' :' . $placeholder;
             $this->values[$placeholder] = $v;
         }
-        return $this;
+        return $this;        
+    }
+
+    /**
+     * Filter objects by
+     */
+    public function filterBy() {
+        $args = func_get_args();
+        return $this->internalFilterBy($args, '=');
     }
     
-    public function filterIn() {
+    /**
+     * Filter objects by not
+     */
+    public function filterByNot() {
         $args = func_get_args();
+        return $this->internalFilterBy($args, '!=');
+    }
+    
+    /**
+     * Filter objects greater than
+     */
+    public function filterByGt() {
+        $args = func_get_args();
+        return $this->internalFilterBy($args, '>');
+    }
+    
+    /**
+     * Filter objects less than
+     */
+    public function filterByLt() {
+        $args = func_get_args();
+        return $this->internalFilterBy($args, '<');
+    }
+
+    /**
+     * Filter objects greater than
+     */
+    public function filterByGtEq() {
+        $args = func_get_args();
+        return $this->internalFilterBy($args, '>=');
+    }
+    
+    /**
+     * Filter objects less than
+     */
+    public function filterByLtEq() {
+        $args = func_get_args();
+        return $this->internalFilterBy($args, '<=');
+    }
+
+    protected function internalFilterIn($args, $operator, $nullOperator, $nullCondition) {
         $filters = array();
         $k = array_shift($args);
         $v = array();
+        $foundNull = false;
         foreach ( $args as $arg ) {
             if ( is_array($arg) ) {
-                foreach ( $arg as $a ) $v[] = $a;
+                foreach ( $arg as $a ) {
+                    if ( $a === null ) { $foundNull = true; }
+                    else { $v[] = $a; }
+                }
             } else {
-                $v[] = $arg;
+                if ( $arg === null ) { $foundNull = true; }
+                else { $v[] = $arg; }
             }
         }
         foreach ( $v as $value ) {
@@ -137,10 +185,30 @@ class repose_FluidQuery {
             $placeholders[] = ':' . $placeholder;
             $this->values[$placeholder] = $value;
         }
-        $this->wheres[] = $k . ' IN (' . implode(', ', $placeholders) . ')';
-        return $this;
+        $localWheres = array();
+        if ( count($v) ) { 
+            $localWheres[] = $k . ' ' . $operator . ' (' . implode(', ', $placeholders) . ')';
+        }
+        if ( $foundNull ) {
+            $localWheres[] = $k . ' ' . $nullOperator;
+        }
+        if ( $localWheres ) {
+            $this->wheres[] = '(' . implode(' ' . $nullCondition . ' ', $localWheres) . ')';
+        }
+        return $this;        
+    }
+    
+    public function filterIn() {
+        $args = func_get_args();
+        return $this->internalFilterIn($args, 'IN', 'IS NULL', 'OR');
     }
 
+    public function filterNotIn() {
+        $args = func_get_args();
+        return $this->internalFilterIn($args, 'NOT IN', 'IS NOT NULL', 'AND');
+    }
+    
+    
     /**
      * Group objects by
      */
