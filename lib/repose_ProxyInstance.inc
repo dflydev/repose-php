@@ -332,16 +332,27 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             // to do so now. 
             //
 
+            $clazz = $this->___repose_clazz;
+            $primaryKey = $this->___repose_session()->getPrimaryKey($this->___repose_clazz);
+            $primaryKeyProperty = $primaryKey->isComposite() ? null : $primaryKey->property();
+            
+            if ( $primaryKeyProperty !== null ) {
+                $name = $primaryKeyProperty->name();
+                switch($primaryKeyProperty->generator()) {
+                    case 'uuid':
+                        $this->___repose_propertySetter($name, repose_Uuid::v4());
+                        break;
+                }
+            }
+            
             // Persist this proxy in our engine.
             $newId = $this->___repose_session()->engine()->persist($this->___repose_session(), $this);
 
-            $clazz = $this->___repose_clazz;
-            $primaryKey = $this->___repose_session()->getPrimaryKey($this->___repose_clazz);
-
-            if ( ! $primaryKey->isComposite() ) {
-                $primaryKeyProperty = $primaryKey->property();
-                $name = $primaryKeyProperty->name();
-                $this->___repose_propertySetter($name, $newId);
+            if ( $primaryKeyProperty !== null ) {
+                if ( $primaryKeyProperty->generator() == 'auto' ) {
+                    $name = $primaryKeyProperty->name();
+                    $this->___repose_propertySetter($name, $newId);
+                }
             }
 
             // And now we know...

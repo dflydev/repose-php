@@ -45,6 +45,12 @@ class repose_MappedClassProperty {
      * @var bool
      */
     protected $isPrimaryKey;
+    
+    /**
+     * Name of generator
+     * @var string
+     */
+    protected $generator;
 
     /**
      * Class name
@@ -116,6 +122,10 @@ class repose_MappedClassProperty {
         $this->foreignKey = isset($config['foreignKey']) ? $config['foreignKey'] : null;
         $this->backref = isset($config['backref']) ? $config['backref'] : null;
         $this->cascade = isset($config['cascade']) ? $config['cascade'] : 'none';
+        if ( ! isset($config['generator']) ) {
+            $config['generator'] = 'auto';
+        }
+        $this->generator = $config['generator'];
     }
 
     /**
@@ -172,6 +182,14 @@ class repose_MappedClassProperty {
      */
     public function isPrimaryKey() {
         return $this->isPrimaryKey;
+    }
+    
+    /**
+     * Generator
+     * @return string
+     */
+    public function generator() {
+        return $this->generator;
     }
 
     /**

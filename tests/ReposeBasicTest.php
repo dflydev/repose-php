@@ -252,6 +252,37 @@ class ReposeBasicTest extends AbstractReposeTest {
     }
     
     /**
+     * Test creating a new model with ID specified
+     */
+    public function testNewModelWithIdSpecified() {
+
+        $this->loadClass('sample_Resource');
+
+        $sessionFactory = $this->getSampleProjectSessionFactory(true);
+        
+        $session1 = $sessionFactory->openSession();
+        $session2 = $sessionFactory->openSession();
+        $session3 = $sessionFactory->openSession();
+        
+        $resource = $session1->add(new sample_Resource('inventory', 'Inventory'));
+        
+        $session1->flush();
+        
+        $this->assertEquals("inventory", $resource->resourceId);
+        
+        $resource = $session2->find('sample_Resource')->filterBy('resourceId', 'inventory')->one();
+        $this->assertEquals("Inventory", $resource->name);
+        
+        $resource->name = 'Inventory Changed';
+        
+        $session2->flush();
+
+        $resource = $session3->find('sample_Resource')->filterBy('resourceId', 'inventory')->one();
+        $this->assertEquals("Inventory Changed", $resource->name);
+        
+    }
+    
+    /**
      * Get a sample project session
      * @return repose_Session
      */
@@ -329,7 +360,18 @@ class ReposeBasicTest extends AbstractReposeTest {
                         ),
                     ),
                 ),
-
+                
+                'sample_Resource' => array(
+                    'tableName' => 'resource',
+                    'properties' => array(
+                        'resourceId' => array(
+                            'primaryKey' => 'true',
+                            'generator' => 'assigned',
+                        ),
+                        'name' => null,
+                    ),
+                ),
+        
             ),
         ));
         
@@ -352,7 +394,8 @@ class ReposeBasicTest extends AbstractReposeTest {
         $dataSource->exec('DROP TABLE IF EXISTS project');
         $dataSource->exec('DROP TABLE IF EXISTS projectInfo');
         $dataSource->exec('DROP TABLE IF EXISTS bug');
-
+        $dataSource->exec('DROP TABLE IF EXISTS resource');
+        
         $dataSource->exec('
 CREATE TABLE user (
 userId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -385,6 +428,13 @@ body TEXT NOT NULL,
 projectId INTEGER NOT NULL,
 reporterUserId INTEGER NOT NULL,
 ownerUserId INTEGER
+)
+');
+
+        $dataSource->exec('
+CREATE TABLE resource (
+resourceId TEXT NOT NULL,
+name TEXT NOT NULL
 )
 ');
 
