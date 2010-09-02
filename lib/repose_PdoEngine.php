@@ -67,11 +67,41 @@ class repose_PdoEngine extends repose_AbstractSqlEngine {
         $rows = array();
         if ( ! is_array($params) ) $params = array();
         try {
+            
             $statement = $this->dataSource->prepare($sql);
+
+            /*
+            $numeric = null;
+            $counter = 1; // Only used for numeric bind params.
+            foreach ( $params as $idx => $param ) {
+
+                if ( $numeric === null ) {
+                    if ( is_numeric($idx) ) { $numeric = true; }
+                    else { $numeric = false; }
+                }
+                
+                $type = PDO::PARAM_STR;
+
+                //if ( is_float($param) ) { $type = PDO::PARAM_FLOAT; }
+                //elseif ( is_numeric($param) ) { $type = PDO::PARAM_INT; }
+                
+                if ( $numeric ) {
+                    $statement->bindParam($counter++, $param, $type);
+                } else {
+                    $statement->bindParam($idx, $param); //, PDO::PARAM_INT);
+                }
+                
+            }
+            
+            $statement->execute();
+            */
+            
             $statement->execute(is_null($params) ? array() : $params);
+
             foreach ( $statement->fetchAll(PDO::FETCH_ASSOC) as $row ) {
                 $rows[] = $row;
             }
+            
         } catch (Exception $e) {
             print $sql . "\n\n";
             print_r($params);

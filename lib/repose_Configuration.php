@@ -47,10 +47,10 @@ class repose_Configuration {
     );
 
     /**
-     * Autoload callback
+     * Autoloader callback
      * @var callback
      */
-    protected $autoload;
+    protected $autoloader;
 
     /**
      * Constructor
@@ -145,8 +145,11 @@ class repose_Configuration {
 
         }
 
-        if ( isset($config['autoload']) ) {
-            $this->autoload = $config['autoload'];
+        if ( isset($config['autoloader']) ) {
+            $this->autoloader = $config['autoloader'];
+        } elseif ( isset($config['autoloaderClass']) ) {
+            $autoloaderClass = $config['autoloaderClass'];
+            $this->autoloader = new $autoloaderClass();
         }
 
     }
@@ -197,6 +200,14 @@ class repose_Configuration {
      */
     public function mapping() {
         return $this->mapping;
+    }
+    
+    /**
+     * Autoloader
+     * @return repose_IAutoloader
+     */
+    public function autoloader() {
+        return $this->autoloader;
     }
 
 }

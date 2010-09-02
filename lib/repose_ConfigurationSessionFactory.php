@@ -29,7 +29,8 @@ class repose_ConfigurationSessionFactory extends repose_AbstractSessionFactory {
     public function openSession() {
         return new repose_Session(
             $this->configuration->engine(),
-            $this->configuration->mapping()
+            $this->configuration->mapping(),
+            $this->configuration->autoloader()
         );
     }
 
