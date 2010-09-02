@@ -84,6 +84,18 @@ class repose_FluidQuery {
      * @var repose_QueryResponse
      */
     protected $queryResponse;
+    
+    /**
+     * Do not load anything of these classes.
+     * @var array
+     */
+    protected $doNotLoad = array();
+
+    /**
+     * Do not load anything of these paths.
+     * @var array
+     */
+    protected $skipPaths = array();
 
     /**
      * Constructor
@@ -264,7 +276,9 @@ class repose_FluidQuery {
             $query = new repose_Query(
                 $this->session,
                 $this->mapping,
-                $this->generateQueryString()
+                $this->generateQueryString(),
+                $this->doNotLoad,
+                $this->skipPaths
             );
             $this->queryResponse = $query->execute($this->values);
         }
@@ -336,6 +350,24 @@ class repose_FluidQuery {
      */
     public function count() {
         return $this->query()->count();
+    }
+    
+    /**
+     * Do not load any of a certain type of classes.
+     * @param array $classes
+     */
+    public function doNotLoad($classes) {
+        $this->doNotLoad = $classes;
+        return $this;
+    }
+
+    /**
+     * Do not load any of a certain type of paths.
+     * @param array $classes
+     */
+    public function skipPaths($skipPaths) {
+        $this->skipPaths = $skipPaths;
+        return $this;
     }
 
 }

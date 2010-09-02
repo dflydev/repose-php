@@ -117,6 +117,12 @@ class repose_QueryParser {
     private $selectExpressions = array();
 
     /**
+     * Collection of lazy loaded properties
+     * @var array
+     */
+    private $lazyProperties = array();
+    
+    /**
      * Requested SELECT results
      * 
      * Used if the query has a custom SELECT query instead of
@@ -130,17 +136,32 @@ class repose_QueryParser {
      * @var string
      */
     private $where = null;
-
+    
+    /**
+     * Do not load anything of these classes.
+     * @var array
+     */
+    protected $doNoLoad = array();
+    
+    /**
+     * Do not load anything of these paths.
+     * @var array
+     */
+    protected $skipPaths = array();
+    
     /**
      * Constructor
      * @param repose_Session $session Repose Session
      * @param repose_Mapping $mapping Repose Mapping
      * @param string $queryString Query string
+     * @param array $doNotLoad Classes not to load
      */
-    public function __construct(repose_Session $session, repose_Mapping $mapping, $queryString) {
+    public function __construct(repose_Session $session, repose_Mapping $mapping, $queryString, $doNotLoad = null, $skipPaths = null) {
         $this->session = $session;
         $this->mapping = $mapping;
         $this->rawQueryString = $queryString;
+        $this->doNotLoad = $doNotLoad === null ? array() : $doNotLoad;
+        $this->skipPaths = $skipPaths === null ? array() : $skipPaths;
     }
     
     public function rewriteObjectReferences($input) {
@@ -289,6 +310,7 @@ class repose_QueryParser {
     public function generateResults($rows) {
         $results = array();
         $deferred = array();
+        $lazyRequests = array();
         foreach ( $rows as $row ) {
             $objects = array();
             foreach ( $this->from as $from ) {
@@ -333,17 +355,31 @@ class repose_QueryParser {
                 }
                 foreach ( $deferredData as $deferredHere ) {
                     if ( ! isset($deferred[$deferredHere['className']])) {
-                        //
                         $deferred[$deferredHere['className']] = array();
                     }
                     if ( ! isset($deferredHere['object']) ) { $deferredHere['object'] = array(); }
                     $deferredHere['object'][] = $object;
                     $deferred[$deferredHere['className']][$deferredHere['id']] = $deferredHere;
                 }
+                if ( isset($this->lazyProperties[$from['path']]) ) {
+                    foreach ( $this->lazyProperties[$from['path']] as $property ) {
+                        if ( ! isset($lazyRequests[$property->className()]) ) {
+                            $lazyRequests[$property->className()] = array();
+                        }
+                        if ( ! isset($lazyRequests[$property->className()][$from['path'] . '.'. $property->name()]) ) {
+                            $lazyRequests[$property->className()][$from['path'] . '.' . $property->name()] = array(
+                                'from' => $from,
+                                'property' => $property,
+                                'objects' => array(),
+                            );
+                        }
+                        $lazyRequests[$property->className()][$from['path'] . '.' . $property->name()]['objects'][] = $object;
+                    }
+                }
             }
             $result = array();
             foreach ( $objects as $path => $objectInfo ) {
-
+                
                 if ( preg_match('/^(.+)\.([^\.]+)$/s', $path, $pathParts) ) {
 
                     // Break out the matches.
@@ -377,7 +413,7 @@ class repose_QueryParser {
             }
             
         }
-    
+        
         if ( count($results) ) {
             if ( is_array($results[0]) ) {
                 throw new Exception('Multiple return objects currently unsupported.');
@@ -393,7 +429,15 @@ class repose_QueryParser {
                 }
             }
         }
-
+        
+        $localSkipPaths = $this->skipPaths;
+        foreach ( $lazyRequests as $lazyClass => $targets ) {
+            foreach ( $targets as $path => $target ) {
+                $localSkipPaths[] = $lazyClass . "." . $target['property']->backref();
+                $localSkipPaths[] = $target['from']['className'] . "." . $target['property']->name();
+            }
+        }
+        
         foreach ( $deferred as $className => $deferredInfo ) {
             $doLookup = array();
             foreach ( $deferredInfo as $objId => $stillDeferred) {
@@ -415,7 +459,7 @@ class repose_QueryParser {
             }
             if ( $doLookup ) {
                 $primaryKey = $this->session->getPrimaryKey($className)->property()->name();
-                foreach ( $this->session->find($className)->filterIn($primaryKey, array_keys($doLookup))->all() as $obj ) {
+                foreach ( $this->session->find($className)->filterIn($primaryKey, array_keys($doLookup))->skipPaths($localSkipPaths)->all() as $obj ) {
                     $primaryKey = $obj->___repose_propertyGetter($primaryKey);
                     foreach ( $doLookup[$primaryKey]['object'] as $stillDeferredObj ) {
                         $stillDeferredObj->___repose_propertySetter(
@@ -423,6 +467,25 @@ class repose_QueryParser {
                             $obj
                         );
                     }
+                }
+            }
+        }
+
+        foreach ( $lazyRequests as $lazyClass => $targets ) {
+            foreach ( $targets as $path => $target ) {
+                $objects = $this->session->find(
+                    $lazyClass
+                )->filterIn(
+                    $target['property']->backref($this->session->mapping()),
+                    $target['objects']
+                )->skipPaths(
+                    $localSkipPaths
+                )->all();
+                foreach ( $objects as $object ) {
+                    $other = $object->___repose_propertyGetter($target['property']->backref($this->session->mapping()));
+                    $collection = $other->___repose_propertyGetter($target['property']->name());
+                    $collection[] = $object;
+                    $collection->___repose_fakeIsQueried();
                 }
             }
         }
@@ -502,11 +565,22 @@ class repose_QueryParser {
         }
 
         foreach ( $config->mappedClassProperties() as $property ) {
+            $parentPath = $from['className'] . '.' . $property->name();
             if ( $property->isCollection() ) {
+                if ( $this->checkForCiruclarReference($property->className(), $path) or in_array($parentPath, $this->skipPaths) ) {
+                    // maybe do nothing here?
+                } else {
+                    if ( ! $property->isLazy() ) {
+                        $this->addLazyProperty($path, $property);
+                    }
+                }
                 // TODO Is this where we can handle non-lazy loading
                 // of collections?
             } elseif ( $property->isObject() ) {
-                if ( $this->checkForCiruclarReference($property->className(), $path) ) {
+                if ( in_array($property->className(), $this->doNotLoad) ) {
+                    break;
+                }
+                if ( $this->checkForCiruclarReference($property->className(), $path) or in_array($parentPath, $this->skipPaths) ) {
                     $this->addSelectExpression($path, $from, $property, true);
                 } else {
                     $objectPath = implode('.', array($path, $property->name()));
@@ -516,6 +590,16 @@ class repose_QueryParser {
                 $this->addSelectExpression($path, $from, $property);
             }
         }
+    }
+    
+    /**
+     * Keep track of lazy loaded properties
+     * @param string $path
+     * @param repose_MappedClassProperty $property
+     */
+    protected function addLazyProperty($path, $property) {
+        if ( ! isset($this->lazyProperties[$path]) ) $this->lazyProperties[$path] = array();
+        $this->lazyProperties[$path][$property->name()] = $property;
     }
     
     protected function addSelectExpression($path, $from, $property, $defer = null) {

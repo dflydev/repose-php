@@ -260,6 +260,30 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             }
         }
     }
+    
+    /**
+     * Import a collection property?
+     * @param repose_MappedClassProperty $property Property
+     * @param mixed $objects
+     */
+    public function ___repose_mergeCollection($property, $objects) {
+        echo ' aaa ' . "\n";
+        $collection = $this->___repose_propertyGetter($property->name());
+        if ( ! $collection instanceof repose_ICollection ) {
+            $this->___repose_propertySetter($property->name(), new repose_ArrayCollection(
+                $this->___repose_session(),
+                $this->___repose_instanceCache(),
+                $this,
+                $property,
+                array_merge($collection, $objects)
+            ));
+            
+        } else {
+            $collection->___repose_fakeIsQueried();
+            foreach ( $objects as $object ) $collection[] = $object;
+        }
+        echo ' bbb ' . "\n";
+    }
 
     /**
      * Is we dirty?

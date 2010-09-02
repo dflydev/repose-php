@@ -75,6 +75,12 @@ class repose_MappedClassProperty {
      * @var string
      */
     protected $cascade;
+    
+    /**
+     * Is collection lazy loaded?
+     * @var unknown_type
+     */
+    protected $isLazy;
 
     /**
      * Constructor
@@ -126,6 +132,8 @@ class repose_MappedClassProperty {
             $config['generator'] = 'auto';
         }
         $this->generator = $config['generator'];
+        $this->isLazy = true;
+        if ( isset($config['lazy']) and ! $config['lazy'] ) { $this->isLazy = false; }
     }
 
     /**
@@ -241,6 +249,14 @@ class repose_MappedClassProperty {
      */
     public function cascade() {
         return $this->cascade;
+    }
+    
+    /**
+     * Is colleciton lazy?
+     * @return bool
+     */
+    public function isLazy() {
+        return $this->isLazy;
     }
 
     /**

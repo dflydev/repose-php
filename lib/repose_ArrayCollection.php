@@ -143,6 +143,10 @@ class repose_ArrayCollection implements repose_ICollection, ArrayAccess, Iterato
             $this->___repose_isQueried = true;
         }
     }
+    
+    public function ___repose_fakeIsQueried() {
+        $this->___repose_isQueried = true;
+    }
 
     public function offsetSet($offset,$value) {
         // TODO Determine if we actually want to ping the database when

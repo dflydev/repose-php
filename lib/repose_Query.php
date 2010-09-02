@@ -42,11 +42,13 @@ class repose_Query {
      * @param repose_Session $session Repose Session
      * @param repose_Mapping $mapping Repose Mapping
      * @param string $queryString Query string
+     * @param array $doNotLoad classes not to load
+     * @param array $skipPaths paths not to load
      */
-    public function __construct(repose_Session $session, repose_Mapping $mapping, $queryString) {
+    public function __construct(repose_Session $session, repose_Mapping $mapping, $queryString, $doNotLoad = null, $skipPaths = null) {
         $this->session = $session;
         $this->mapping = $mapping;
-        $this->queryParser = new repose_QueryParser($session, $mapping, $queryString);
+        $this->queryParser = new repose_QueryParser($session, $mapping, $queryString, $doNotLoad, $skipPaths);
         $this->queryParser->execute();
     }
 
