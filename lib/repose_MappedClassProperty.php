@@ -131,7 +131,26 @@ class repose_MappedClassProperty {
         if ( ! isset($config['generator']) ) {
             $config['generator'] = 'auto';
         }
-        $this->generator = $config['generator'];
+        if ( is_object($config['generator']) ) {
+            $this->generator = $config['generator'];
+        } else {
+            switch($config['generator']) {
+                case 'assigned':
+                case 'auto':
+                case 'uuid':
+                    $generatorClazz = 'repose_' . ucfirst($config['generator']) . 'PropertyGenerator';
+                    require_once($generatorClazz . '.php');
+                    $this->generator = new $generatorClazz();
+                    break;
+                default:
+                    $generatorClazz = $config['generator'];
+                    if ( ! class_exists($generatorClazz) ) {
+                        die("Generator class $generatorClazz not loaded. Was it required?");
+                    }
+                    $this->generator = new $generatorClazz();
+                    break;
+            }
+        }
         $this->isLazy = true;
         if ( isset($config['lazy']) and ! $config['lazy'] ) { $this->isLazy = false; }
     }

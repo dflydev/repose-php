@@ -1,7 +1,8 @@
 <?php
 /**
- * Session
  * @package repose
+ * @file repose_Session.php
+ * Session
  */
 
 require_once('repose_InstanceCache.php');
@@ -13,9 +14,12 @@ require_once('repose_Query.php');
 require_once('repose_FluidQuery.php');
 require_once('repose_Uuid.php');
 
-/**
- * Session TEST
+/** 
  * @package repose
+ * @class repose_Session
+ * @brief Session container
+ * 
+ * This is a session container.
  */
 class repose_Session {
 
@@ -39,9 +43,9 @@ class repose_Session {
 
     /**
      * Constructor
-     * @param repose_IEngine $engine Engine
-     * @param repose_Mapping $mapping Mapping
-     * @param repose_IAutoloader $autoloader Autoloader
+     * @param $engine Engine
+     * @param $mapping Mapping
+     * @param $autoloader Autoloader
      */
     public function __construct(repose_IEngine $engine, repose_Mapping $mapping, repose_IAutoloader $autoloader = null) {
         $this->id = repose_Uuid::v4();
@@ -55,7 +59,7 @@ class repose_Session {
 
     /**
      * Session ID
-     * return @string
+     * @return string
      */
     public function id() {
         return $this->id;
@@ -63,8 +67,8 @@ class repose_Session {
 
     /**
      * Place an object in the Session.
-     * @param object $instance Object instance
-     * @param string $clazz Class name
+     * @param $instance Object instance
+     * @param $clazz Class name
      * @return object Proxy
      */
     public function add($instance = null, $clazz = null) {

@@ -157,7 +157,8 @@ class ReposeBasicTest extends AbstractReposeTest {
         // We want to add another user that sorts to the top so that we can
         // be more certain that our order by and limit actions are working
         // as we expect.
-        $session->add(new sample_User('000zero'));
+        $topUser = new sample_User('000zero');
+        $topUser = $session->add($topUser);
         $session->flush();
         
         $users = $session->find('sample_User')->orderBy('name')->all();
@@ -283,10 +284,58 @@ class ReposeBasicTest extends AbstractReposeTest {
     }
     
     /**
+     * A model that uses a UUID
+     */
+    public function testNewModelWithUuidGenerator() {
+        
+        $this->loadClass('sample_UuidRecord');
+        $session = $this->getSampleProjectSession(true);
+        $record = $session->add(new sample_UuidRecord());
+        
+        $session->flush();
+        
+        $this->assertTrue(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $record->recordId, $matches) == 1);
+    
+    }
+
+    /**
+     * A silly record model
+     */
+    public function testNewModelWithSillyGenerator() {
+        
+        $this->loadClass('sample_SillyRecord');
+        $session = $this->getSampleProjectSession(true);
+        $record = $session->add(new sample_SillyRecord('FOO'));
+        
+        $this->assertEquals(null, $record->recordId);
+        
+        $session->flush();
+        
+        $this->assertEquals('SILLY-FOO', $record->recordId);
+    
+    }
+    
+    /**
+     * A silly record model
+     */
+    public function testNewModelWithAddSillyGenerator() {
+        
+        $this->loadClass('sample_AddSillyRecord');
+        $session = $this->getSampleProjectSession(true);
+        $record = $session->add(new sample_AddSillyRecord('FOO'));
+        
+        $this->assertEquals('ADD-SILLY-FOO', $record->recordId);
+        
+    }
+    
+    /**
      * Get a sample project session
      * @return repose_Session
      */
     protected function getSampleProjectSessionFactory($initDb = false) {
+        
+        $this->loadClass('sample_SillyRecord');
+        $this->loadClass('sample_AddSillyRecord');
         
         $configuration = new repose_Configuration(array(
 
@@ -371,7 +420,39 @@ class ReposeBasicTest extends AbstractReposeTest {
                         'name' => null,
                     ),
                 ),
-        
+                
+                'sample_UuidRecord' => array(
+                    'tableName' => 'uuidRecord',
+                    'properties' => array(
+                        'recordId' => array(
+                            'primaryKey' => true,
+                            'generator' => 'uuid',
+                        ),
+                    ),
+                ),
+
+                'sample_SillyRecord' => array(
+                    'tableName' => 'sillyRecord',
+                    'properties' => array(
+                        'recordId' => array(
+                            'primaryKey' => true,
+                            'generator' => 'sample_SillyRecordPropertyGenerator',
+                        ),
+                        'name' => null,
+                    ),
+                ),
+                
+                'sample_AddSillyRecord' => array(
+                    'tableName' => 'addSillyRecord',
+                    'properties' => array(
+                        'recordId' => array(
+                            'primaryKey' => true,
+                            'generator' => 'sample_AddSillyRecordPropertyGenerator',
+                        ),
+                        'name' => null,
+                    ),
+                ),
+                
             ),
         ));
         
@@ -395,6 +476,9 @@ class ReposeBasicTest extends AbstractReposeTest {
         $dataSource->exec('DROP TABLE IF EXISTS projectInfo');
         $dataSource->exec('DROP TABLE IF EXISTS bug');
         $dataSource->exec('DROP TABLE IF EXISTS resource');
+        $dataSource->exec('DROP TABLE IF EXISTS addSillyRecord');
+        $dataSource->exec('DROP TABLE IF EXISTS sillyRecord');
+        $dataSource->exec('DROP TABLE IF EXISTS uuidRecord');
         
         $dataSource->exec('
 CREATE TABLE user (
@@ -438,6 +522,26 @@ name TEXT NOT NULL
 )
 ');
 
+        $dataSource->exec('
+CREATE TABLE sillyRecord (
+recordId TEXT NOT NULL,
+name TEXT NOT NULL
+)
+');
+        
+        $dataSource->exec('
+CREATE TABLE addSillyRecord (
+recordId TEXT NOT NULL,
+name TEXT NOT NULL
+)
+');
+        
+        $dataSource->exec('
+CREATE TABLE uuidRecord (
+recordId TEXT NOT NULL
+)
+');
+        
         $dataSource->exec('INSERT INTO user (userId, name) VALUES (100001, "firstUser")');
         $dataSource->exec('INSERT INTO user (userId, name) VALUES (100002, "secondUser")');
 

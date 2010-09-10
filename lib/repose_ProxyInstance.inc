@@ -113,6 +113,23 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
         $this->___repose_populateHistoryFromInstance();
         $this->___repose_isDeleted = false;
         $this->___repose_isReallyDeleted = false;
+        $clazz = $this->___repose_clazz;
+
+        $primaryKey = $this->___repose_primaryKey();
+        $primaryKeyProperty = $primaryKey->isComposite() ? null : $primaryKey->property();
+
+        if ( $primaryKeyProperty !== null ) {
+            $name = $primaryKeyProperty->name();
+            if ( $primaryKeyProperty->generator()->shouldGenerateOnAdd() ) {
+                $this->___repose_propertySetter($name, $primaryKeyProperty->generator()->generate(
+                    $this->___repose_session(),
+                    $this->___repose_mappedClass(),
+                    $primaryKeyProperty,
+                    $this
+                ));
+            }
+        }
+        
     }
 
     /**
@@ -359,13 +376,16 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             $clazz = $this->___repose_clazz;
             $primaryKey = $this->___repose_session()->getPrimaryKey($this->___repose_clazz);
             $primaryKeyProperty = $primaryKey->isComposite() ? null : $primaryKey->property();
-            
+
             if ( $primaryKeyProperty !== null ) {
                 $name = $primaryKeyProperty->name();
-                switch($primaryKeyProperty->generator()) {
-                    case 'uuid':
-                        $this->___repose_propertySetter($name, repose_Uuid::v4());
-                        break;
+                if ( $primaryKeyProperty->generator()->shouldGenerateBeforePersist() ) {
+                    $this->___repose_propertySetter($name, $primaryKeyProperty->generator()->generate(
+                        $this->___repose_session(),
+                        $this->___repose_mappedClass(),
+                        $primaryKeyProperty,
+                        $this
+                    ));
                 }
             }
             
@@ -373,9 +393,15 @@ class PROXY_TEMPLATE__ReposeProxy__ extends PROXY_TEMPLATE implements repose_IPr
             $newId = $this->___repose_session()->engine()->persist($this->___repose_session(), $this);
 
             if ( $primaryKeyProperty !== null ) {
-                if ( $primaryKeyProperty->generator() == 'auto' ) {
-                    $name = $primaryKeyProperty->name();
-                    $this->___repose_propertySetter($name, $newId);
+                $name = $primaryKeyProperty->name();
+                if ( $primaryKeyProperty->generator()->shouldGenerateAfterPersist() ) {
+                    $this->___repose_propertySetter($name, $primaryKeyProperty->generator()->generate(
+                        $this->___repose_session(),
+                        $this->___repose_mappedClass(),
+                        $primaryKeyProperty,
+                        $this,
+                        $newId
+                    ));
                 }
             }
 

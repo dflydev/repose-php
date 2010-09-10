@@ -1,6 +1,6 @@
 <?php
 /**
- * Abstract Session Factory
+ * Abstract Session Factory a
  * @package repose
  */
 
