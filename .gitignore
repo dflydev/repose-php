@@ -1,1 +1,7 @@
+.buildpath
+.project
+.settings
+._*
 build
+dist
+repos

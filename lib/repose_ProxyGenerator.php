@@ -183,11 +183,10 @@ class repose_ProxyGenerator {
             $proxyReflectionClass = new ReflectionClass($proxyClazz);
             $reflectionClassProperties = array();
             $proxyReflectionClassProperties = array();
+            $properties = self::ALL_FIELDS($reflectionClass);
             foreach ( $this->session->getProperties($clazz) as $property ) {
                 try {
-                    $reflectionProperty = $reflectionClass->getProperty(
-                        $property->name()
-                    );
+                    $reflectionProperty = $properties[$property->name()];
                     if ( ! $reflectionProperty->isPublic() ) {
                         if ( method_exists($reflectionProperty, 'setAccessible') ) {
                             $reflectionProperty->setAccessible(true);
@@ -242,6 +241,45 @@ class repose_ProxyGenerator {
     public function destroy() {
         $this->session = null;
         $this->instanceCache = null;
+    }
+    
+    /**
+     * Get Reflection Property instances for all available properties
+     * 
+     * Code borroed from ArcheType-PHP (thanks aek)
+     * @author aek
+     * @param mixed $clazz
+     */
+    static protected function ALL_FIELDS($clazz) {
+        
+        $properties = array();
+        if($clazz instanceof ReflectionClass){
+            $reflectionClass = $clazz;
+        } else {
+            $reflectionClass = new ReflectionClass($clazz);
+        }
+
+        foreach ($reflectionClass->getProperties() as $reflectionProperty) {
+            if($reflectionProperty->isPrivate()){
+                $methodName = 'get'.ucfirst($reflectionProperty->getName());
+                if ($reflectionClass->hasMethod($methodName)) {
+                    $method = $reflectionClass->getMethod($methodName);
+                    if($method->isPublic()){
+                        $properties[$reflectionProperty->getName()] = $reflectionProperty;
+                    }
+                }
+            } else {
+                if($reflectionProperty->isPublic()){
+                    $properties[$reflectionProperty->getName()] = $reflectionProperty;
+                }
+            }
+        }
+        if($reflectionClass->getParentClass() !== false){
+            $properties = array_merge($properties, self::ALL_FIELDS($reflectionClass->getParentClass()));
+        }
+
+        return $properties;
+
     }
 
 }
