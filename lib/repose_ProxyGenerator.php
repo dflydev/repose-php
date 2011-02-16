@@ -260,19 +260,20 @@ class repose_ProxyGenerator {
         }
 
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
-            if($reflectionProperty->isPrivate()){
-                $methodName = 'get'.ucfirst($reflectionProperty->getName());
-                if ($reflectionClass->hasMethod($methodName)) {
-                    $method = $reflectionClass->getMethod($methodName);
-                    if($method->isPublic()){
-                        $properties[$reflectionProperty->getName()] = $reflectionProperty;
-                    }
-                }
-            } else {
-                if($reflectionProperty->isPublic()){
-                    $properties[$reflectionProperty->getName()] = $reflectionProperty;
-                }
-            }
+            $properties[$reflectionProperty->getName()] = $reflectionProperty;
+            //if($reflectionProperty->isPrivate()){
+            //    $methodName = 'get'.ucfirst($reflectionProperty->getName());
+            //    if ($reflectionClass->hasMethod($methodName)) {
+            //        $method = $reflectionClass->getMethod($methodName);
+            //        if($method->isPublic()){
+            //            $properties[$reflectionProperty->getName()] = $reflectionProperty;
+            //        }
+            //    }
+            //} else {
+            //    if($reflectionProperty->isPublic()){
+            //        $properties[$reflectionProperty->getName()] = $reflectionProperty;
+            //    }
+            //}
         }
         if($reflectionClass->getParentClass() !== false){
             $properties = array_merge($properties, self::ALL_FIELDS($reflectionClass->getParentClass()));
